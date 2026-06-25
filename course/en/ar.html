@@ -73,6 +73,13 @@
     opacity: 0.5;
     cursor: not-allowed;
   }
+  #launch-ar {
+    display: flex;
+  }
+  .ios #launch-ar,
+  .android #launch-ar {
+    display: none;
+  }
   .ar-btn-secondary {
     bottom: 90px;
     background: rgba(255, 255, 255, 0.1);
@@ -184,8 +191,13 @@
 </button>
 
 <!-- Android / WebXR manual fallback -->
-<button id="android-ar" class="ar-btn-secondary" style="display:none; bottom: 96px;" onclick="startAndroidAR()">
+<button id="android-ar" class="ar-btn-secondary" style="display:none;" onclick="startAndroidAR()">
   Manual AR
+</button>
+
+<!-- Generic launch AR button: shown if JS hasn't detected platform or model-viewer AR is available -->
+<button id="launch-ar" class="ar-btn" onclick="startGenericAR()">
+  ⛶ Launch AR
 </button>
 
 <div class="tips" id="tips">
@@ -206,6 +218,7 @@
   const iosBtn = document.getElementById('ios-ar');
   const autoBtn = document.getElementById('auto-ar');
   const androidBtn = document.getElementById('android-ar');
+  const launchBtn = document.getElementById('launch-ar');
   const tips = document.getElementById('tips');
   const errorBox = document.getElementById('error');
   const fallback = document.getElementById('fallback');
@@ -221,17 +234,32 @@
 
   // iOS Safari: use direct AR Quick Look link (most reliable)
   if (isIOS) {
+    document.body.classList.add('ios');
     iosBtn.style.display = 'flex';
+    launchBtn.style.display = 'none';
     tips.innerHTML = 'Tap <b>View in AR</b>, then tap the floor/wall to place the panel.<br>Drag with one finger to reposition; pinch to resize.';
   } else if (isAndroid) {
+    document.body.classList.add('android');
     autoBtn.style.display = 'flex';
     androidBtn.style.display = 'flex';
+    launchBtn.style.display = 'none';
     tips.innerHTML = '<b>Auto-track AR</b> follows the floor as you move your phone.<br><b>Manual AR</b> uses Google Scene Viewer.';
   } else {
+    // Desktop / other: generic launch button tries model-viewer AR first
+    launchBtn.style.display = 'flex';
     tips.style.display = 'none';
     fallback.style.display = 'block';
     fallback.style.bottom = '28px';
   }
+
+  window.startGenericAR = () => {
+    if (viewer.canActivateAR) {
+      viewer.activateAR();
+    } else {
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'AR is not ready on this browser. Try Safari on iPhone or Chrome on a recent Android phone.';
+    }
+  };
 
   window.startAndroidAR = () => {
     if (viewer.canActivateAR) {
@@ -407,9 +435,11 @@
 
     viewer.style.display = 'block';
     if (isIOS) iosBtn.style.display = 'flex';
+    else launchBtn.style.display = 'flex';
     if (isAndroid) {
       autoBtn.style.display = 'flex';
       androidBtn.style.display = 'flex';
+      launchBtn.style.display = 'none';
       tips.style.display = 'block';
     }
 
