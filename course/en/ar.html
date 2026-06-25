@@ -4,36 +4,136 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>AR — Solar PV Module</title>
-<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
 <style>
-  body{margin:0;overflow:hidden;font-family:"Segoe UI",system-ui,Arial,sans-serif}
-  .ovl{position:fixed;top:0;left:0;right:0;padding:10px 14px;background:rgba(10,22,38,.82);color:#fff;
-    font-size:13px;z-index:10;text-align:center;line-height:1.4}
-  .ovl a{color:#FFB300;font-weight:700}
-  .nocam{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
-    background:#0a1626;color:#cfe0f0;padding:30px;font-size:15px;z-index:5}
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    font-family: "Segoe UI", system-ui, Arial, sans-serif;
+    background: #0a1626;
+    color: #fff;
+  }
+  model-viewer {
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+  #ar-button {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
+    color: #0b1622;
+    border: none;
+    border-radius: 12px;
+    padding: 14px 24px;
+    font-size: 16px;
+    font-weight: 700;
+    box-shadow: 0 8px 24px rgba(242, 203, 115, 0.35);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  #ar-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 20;
+    padding: 12px 16px;
+    background: rgba(10, 22, 38, 0.85);
+    backdrop-filter: blur(8px);
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.4;
+  }
+  .header b { color: #F2CB73; }
+  .fallback {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #0a1626;
+    color: #cfe0f0;
+    text-align: center;
+    padding: 30px;
+    z-index: 30;
+  }
+  .fallback h2 { color: #F2CB73; margin: 0 0 12px; }
+  .fallback a {
+    color: #F2CB73;
+    font-weight: 700;
+  }
 </style>
 </head>
 <body>
-<div class="ovl">Point your camera at a <b>Hiro marker</b> to place the 3D solar panel in your space ·
-  <a href="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" target="_blank" rel="noopener">open marker</a>
+<div class="header">
+  Tap <b>View in AR</b> to place a full-size 3D solar panel in your space — no marker needed.
 </div>
-<div class="nocam" id="nocam">Starting camera… allow camera access. AR works best on a phone over HTTPS.</div>
-<a-scene embedded vr-mode-ui="enabled:false"
-  arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
-  renderer="antialias:true; alpha:true">
-  <a-marker preset="hiro" id="m">
-    <a-box position="0 0.03 0" rotation="-90 0 0" width="1.66" height="1.06" depth="0.03" color="#c7ced7"></a-box>
-    <a-box position="0 0.06 0" rotation="-90 0 0" width="1.5" height="0.95" depth="0.04" color="#0a1018"></a-box>
-    <a-text value="Solar PV module" position="0 0.55 0" rotation="-90 0 0" align="center" color="#FFB300" width="3"></a-text>
-  </a-marker>
-  <a-entity camera></a-entity>
-</a-scene>
+
+<model-viewer
+  id="viewer"
+  src="panel.glb"
+  alt="Solar PV module"
+  ar
+  ar-modes="webxr scene-viewer quick-look"
+  camera-controls
+  auto-rotate
+  exposure="1"
+  shadow-intensity="1"
+  camera-orbit="0deg 75deg 2.5m"
+  field-of-view="30deg"
+  interaction-prompt="none"
+  ar-scale="auto"
+  ar-placement="floor"
+  scale="0.5 0.5 0.5"
+  environment-image="neutral">
+  <button id="ar-button" slot="ar-button" onclick="startAR()">
+    ⛶ View in AR
+  </button>
+</model-viewer>
+
+<div class="fallback" id="fallback">
+  <h2>AR is not available</h2>
+  <p>Your browser or device does not support augmented reality.</p>
+  <p>Use a recent Android phone with Chrome, or an iPhone with Safari, for the best experience.</p>
+</div>
+
 <script>
-  // hide the "starting camera" note once the scene renders
-  document.querySelector('a-scene').addEventListener('renderstart',()=>{var n=document.getElementById('nocam');if(n)n.style.display='none';});
-  setTimeout(()=>{var n=document.getElementById('nocam');if(n)n.style.display='none';},4000);
+  const viewer = document.getElementById('viewer');
+  const arButton = document.getElementById('ar-button');
+
+  function startAR() {
+    if (viewer.canActivateAR) {
+      viewer.activateAR();
+    } else {
+      document.getElementById('fallback').style.display = 'flex';
+    }
+  }
+
+  // Move our custom button into the model-viewer slot
+  viewer.addEventListener('load', () => {
+    arButton.disabled = !viewer.canActivateAR;
+  });
+
+  // Hide button if AR is definitely unavailable
+  if (!('xr' in navigator) && !(/iPad|iPhone|iPod/.test(navigator.userAgent))) {
+    arButton.disabled = true;
+    arButton.textContent = 'AR not supported on this device';
+  }
 </script>
 </body>
 </html>
