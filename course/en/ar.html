@@ -8,11 +8,11 @@
 <style>
   *{box-sizing:border-box}
   html,body{margin:0;width:100%;height:100%;font-family:"Segoe UI",system-ui,Arial,sans-serif;background:#0a1626;color:#fff;overflow:hidden}
-  model-viewer{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0a1626}
+  model-viewer{position:absolute;inset:0;width:100%;height:100%;display:block;background:#0a1626;z-index:1}
   .header{position:absolute;top:0;left:0;right:0;z-index:10;padding:12px 16px;text-align:center;font-size:15px;line-height:1.4;background:rgba(10,22,38,.85);backdrop-filter:blur(8px)}
   .header b{color:#F2CB73}
   .tip{position:absolute;bottom:104px;left:16px;right:16px;z-index:10;text-align:center;font-size:13px;color:#cfe0f0;background:rgba(10,22,38,.7);padding:9px 14px;border-radius:10px}
-  .ar-btn{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:11;display:flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:700;cursor:pointer;color:#0b1622;background:linear-gradient(180deg,#F2CB73 0%,#E7B24C 100%);box-shadow:0 8px 24px rgba(0,0,0,.3)}
+  .ar-btn{position:absolute;bottom:30px;left:50%;transform:translateX(-50%);z-index:20;display:flex;align-items:center;gap:8px;border:none;border-radius:12px;padding:14px 26px;font-size:16px;font-weight:700;cursor:pointer;color:#0b1622;background:linear-gradient(180deg,#F2CB73 0%,#E7B24C 100%);box-shadow:0 8px 24px rgba(0,0,0,.3);text-decoration:none}
   .ar-btn svg{width:18px;height:18px;fill:#0b1622}
 </style>
 </head>
@@ -22,18 +22,37 @@
   ar ar-modes="webxr scene-viewer quick-look" ar-scale="auto" ar-placement="floor"
   camera-controls auto-rotate rotation-per-second="20deg" shadow-intensity="1" exposure="1.05"
   environment-image="neutral" camera-orbit="0deg 60deg 3m" field-of-view="32deg"
-  interaction-prompt="none" style="display:block;"></model-viewer>
+  interaction-prompt="none" style="display:block;"
+  quick-look-browsers="safari,chrome">
+</model-viewer>
 <div class="tip" id="tip">Move your phone slowly and point at an open floor so AR can find a surface.</div>
-<button class="ar-btn" id="launch">
+<a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn" style="display:none;">
+  <svg viewBox="0 0 24 24"><path d="M3 3h6v2H5v4H3V3Zm12 0h6v6h-2V5h-4V3ZM3 15h2v4h4v2H3v-6Zm18 0h-2v4h-4v2h6v-6Z"/></svg>
+  View in AR
+</a>
+<button class="ar-btn" id="launch" style="display:none;">
   <svg viewBox="0 0 24 24"><path d="M3 3h6v2H5v4H3V3Zm12 0h6v6h-2V5h-4V3ZM3 15h2v4h4v2H3v-6Zm18 0h-2v4h-4v2h6v-6Z"/></svg>
   Launch AR
 </button>
 <script>
-  var v=document.getElementById('viewer'), b=document.getElementById('launch'), tip=document.getElementById('tip');
+  var v=document.getElementById('viewer'), b=document.getElementById('launch'), i=document.getElementById('ios-ar'), tip=document.getElementById('tip');
+  var ua=navigator.userAgent || navigator.vendor || window.opera || '';
+  var isIOS=/iPad|iPhone|iPod|iOS/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  if(isIOS){
+    i.style.display='flex';
+    b.style.display='none';
+  } else {
+    i.style.display='none';
+    b.style.display='flex';
+  }
+  i.addEventListener('click', function(){
+    v.activateAR();
+  });
   b.addEventListener('click', function(){
     if(v.canActivateAR){ v.activateAR(); }
-    else{ tip.innerHTML='Open this page on a <b>phone</b> (Android Chrome or iPhone Safari) to launch AR. On desktop, drag to rotate the 3-D preview.'; }
+    else { window.location.href='panel.usdz'; }
   });
+  v.addEventListener('error', function(e){ tip.textContent='Could not load 3D model. Refresh and try again.'; console.error(e.detail); });
   v.addEventListener('ar-status', function(e){ if(e.detail.status==='failed'){ tip.textContent='AR could not start. On iPhone use Safari; on Android use Chrome.'; } });
 </script>
 </body>
