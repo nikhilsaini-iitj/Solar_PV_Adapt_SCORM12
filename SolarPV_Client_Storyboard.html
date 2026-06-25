@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solar PV Unit 2 — Client Storyboard & Delivery</title>
+<style>
+  :root {
+    --navy:#0a1626; --navy-2:#111f35; --gold:#f2cb73; --amber:#e7b24c;
+    --sky:#a7bcd2; --white:#f4efe6; --teal:#14b8a6; --blue:#3b82f6;
+    --green:#22c55e; --red:#ef4444; --muted:#7d95b0;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--navy); color:var(--white); font-family:'Segoe UI',system-ui,sans-serif; line-height:1.6; }
+
+  .page { padding:60px 40px; max-width:1200px; margin:0 auto; }
+  .cover {
+    min-height:100vh; display:flex; flex-direction:column; justify-content:center; align-items:center; text-align:center;
+    background: radial-gradient(ellipse 80% 60% at 50% 40%, #13233d 0%, #0a1626 100%);
+  }
+  .cover-badge { font-size:11px; letter-spacing:3px; text-transform:uppercase; color:var(--gold); border:1px solid rgba(242,203,115,.3); padding:6px 18px; border-radius:20px; margin-bottom:24px; }
+  .cover-title { font-size:52px; font-weight:800; line-height:1.1; margin-bottom:16px;
+    background:linear-gradient(135deg,#fff 0%,#a7bcd2 50%,var(--gold) 100%); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+  .cover-sub { font-size:20px; color:var(--muted); max-width:700px; margin-bottom:48px; }
+  .cover-meta { display:flex; gap:48px; }
+  .meta-item .val { font-size:28px; font-weight:700; color:var(--gold); }
+  .meta-item .lbl { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:1px; }
+
+  h2 { font-size:28px; font-weight:700; margin-bottom:24px; color:#fff; }
+  h3 { font-size:18px; font-weight:700; color:var(--gold); margin:32px 0 16px; }
+  p { margin-bottom:16px; color:var(--white); }
+
+  .flow { display:flex; align-items:center; gap:0; overflow-x:auto; padding:24px 0; }
+  .node { min-width:150px; background:var(--navy-2); border:1px solid #1e2d4a; border-radius:12px; padding:16px; text-align:center; flex-shrink:0; }
+  .node .num { font-size:10px; color:var(--muted); text-transform:uppercase; letter-spacing:2px; }
+  .node .name { font-size:14px; font-weight:600; color:#fff; margin:6px 0; }
+  .node .dur { font-size:12px; color:var(--gold); }
+  .arrow { width:40px; height:2px; background:linear-gradient(90deg,var(--blue),var(--teal)); flex-shrink:0; position:relative; }
+  .arrow::after { content:'▶'; position:absolute; right:-8px; top:-8px; font-size:12px; color:var(--teal); }
+
+  .scene { background:var(--navy-2); border:1px solid #1e2d4a; border-radius:16px; padding:28px; margin-bottom:24px; }
+  .scene-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; flex-wrap:wrap; }
+  .badge { font-size:11px; font-weight:700; padding:4px 12px; border-radius:6px; text-transform:uppercase; letter-spacing:1px; }
+  .badge.video { background:var(--blue); color:#fff; }
+  .badge.interactive { background:var(--gold); color:#0a1626; }
+  .badge.ar { background:var(--teal); color:#0a1626; }
+  .badge.assess { background:var(--red); color:#fff; }
+  .scene-title { font-size:22px; font-weight:700; }
+  .scene-dur { margin-left:auto; font-size:13px; color:var(--muted); }
+
+  .grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+  .card { background:#0d1422; border:1px solid #1e2d4a; border-radius:12px; padding:20px; }
+  .card h4 { font-size:11px; text-transform:uppercase; letter-spacing:2px; color:var(--muted); margin-bottom:12px; }
+  .card ul { padding-left:18px; }
+  .card li { margin-bottom:8px; }
+
+  .deliverables { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:20px; }
+  .del { background:var(--navy-2); border:1px solid #1e2d4a; border-radius:12px; padding:20px; }
+  .del .icon { font-size:24px; margin-bottom:12px; }
+  .del .title { font-weight:700; margin-bottom:6px; }
+  .del .desc { font-size:13px; color:var(--muted); }
+  .del a { color:var(--gold); text-decoration:none; word-break:break-all; }
+
+  .specs { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:16px; }
+  .spec { display:flex; gap:12px; }
+  .spec-key { font-size:12px; color:var(--muted); min-width:140px; }
+  .spec-val { font-size:13px; color:#fff; }
+
+  footer { text-align:center; padding:60px 40px; color:var(--muted); font-size:13px; border-top:1px solid #1e2d4a; margin-top:40px; }
+  .corner { position:fixed; width:32px; height:32px; border:2px solid var(--gold); pointer-events:none; }
+  .corner.tl { top:20px; left:20px; border-right:none; border-bottom:none; }
+  .corner.br { bottom:20px; right:20px; border-left:none; border-top:none; }
+</style>
+</head>
+<body>
+  <div class="corner tl"></div>
+  <div class="corner br"></div>
+
+  <section class="cover">
+    <div class="cover-badge">SCORM 1.2 Module</div>
+    <h1 class="cover-title">Solar PV Unit 2</h1>
+    <p class="cover-sub">Choosing the Right Solar Panel — an immersive, mobile-first SCORM 1.2 e-learning module with AR placement, interactive diagrams, and a final assessment.</p>
+    <div class="cover-meta">
+      <div class="meta-item"><div class="val">12</div><div class="lbl">Minutes</div></div>
+      <div class="meta-item"><div class="val">7</div><div class="lbl">Scenes</div></div>
+      <div class="meta-item"><div class="val">3</div><div class="lbl">Interactions</div></div>
+      <div class="meta-item"><div class="val">AR</div><div class="lbl">Experience</div></div>
+    </div>
+  </section>
+
+  <section class="page">
+    <h2>Module Flow</h2>
+    <div class="flow">
+      <div class="node"><div class="num">Scene 1</div><div class="name">Welcome</div><div class="dur">1:40 · Video</div></div>
+      <div class="arrow"></div>
+      <div class="node"><div class="num">Scene 2</div><div class="name">Cell → Module</div><div class="dur">2:10 · Video + Labels</div></div>
+      <div class="arrow"></div>
+      <div class="node"><div class="num">Scene 3</div><div class="name">Inside the Module</div><div class="dur">2:00 · Video + Layers</div></div>
+      <div class="arrow"></div>
+      <div class="node"><div class="num">Scene 4</div><div class="name">Three Technologies</div><div class="dur">1:50 · Video + Compare</div></div>
+      <div class="arrow"></div>
+      <div class="node"><div class="num">Scene 5</div><div class="name">Specifications</div><div class="dur">1:40 · Video + Spec Card</div></div>
+      <div class="arrow"></div>
+      <div class="node"><div class="num">Scene 6</div><div class="name">AR Placement</div><div class="dur">2:00 · AR</div></div>
+      <div class="arrow"></div>
+      <div class="node"><div class="num">Scene 7</div><div class="name">Assessment</div><div class="dur">1:00 · 3 Questions</div></div>
+    </div>
+
+    <h3>Client Need This Module Solves</h3>
+    <p>Field technicians and sales teams need to quickly read a solar panel datasheet, understand the difference between mono / poly / thin-film, and confidently explain module construction to customers. This module replaces a static PDF deck with a short, trackable, device-friendly learning unit that works inside any SCORM 1.2 LMS.</p>
+
+    <h2>Scene Breakdown</h2>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge video">Video</span>
+        <span class="scene-title">1. Welcome — Choosing the Right Solar Panel</span>
+        <span class="scene-dur">~1:40</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Learning Objective</h4>
+          <ul>
+            <li>Hook the learner with a real rooftop scenario.</li>
+            <li>State what the module will cover.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Visual Treatment</h4>
+          <ul>
+            <li>Cinematic dusk rooftop with silhouette figures.</li>
+            <li>Animated "Simulated output" energy widget.</li>
+            <li>Gold corner brackets and deep navy palette.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge video">Video</span>
+        <span class="badge interactive">Interactive</span>
+        <span class="scene-title">2. From a Cell to a Module</span>
+        <span class="scene-dur">~2:10</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Learning Objective</h4>
+          <ul>
+            <li>Explain how individual cells are wired and laminated into a module.</li>
+            <li>Connect cell behaviour to real-world module output.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Interactive Element</h4>
+          <ul>
+            <li>Embedded <strong>P-N junction simulation</strong>: fire a photon and watch electron-hole separation.</li>
+            <li>Launch button opens full-screen simulation.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge video">Video</span>
+        <span class="badge interactive">Interactive</span>
+        <span class="scene-title">3. Inside the Module</span>
+        <span class="scene-dur">~2:00</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Learning Objective</h4>
+          <ul>
+            <li>Name the layers of a PV module from glass to frame.</li>
+            <li>Understand why each layer matters for 25-year outdoor life.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Interactive Element</h4>
+          <ul>
+            <li>3D virtual lab: rotate, explode layers, switch cell technology.</li>
+            <li>System energy flow diagram (day/night switching).</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge video">Video</span>
+        <span class="badge interactive">Interactive</span>
+        <span class="scene-title">4. The Three Technologies</span>
+        <span class="scene-dur">~1:50</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Learning Objective</h4>
+          <ul>
+            <li>Compare monocrystalline, polycrystalline, and thin-film.</li>
+            <li>Match each technology to its best site condition.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Interactive Element</h4>
+          <ul>
+            <li>Narrative swipe cards with visual comparison.</li>
+            <li>Panel type selector inside 3D lab.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge video">Video</span>
+        <span class="badge interactive">Interactive</span>
+        <span class="scene-title">5. Reading Specifications</span>
+        <span class="scene-dur">~1:40</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Learning Objective</h4>
+          <ul>
+            <li>Decode Pmax, Voc, Isc, Vmp, Imp, efficiency, and temperature coefficient.</li>
+            <li>Link datasheet numbers to on-site performance.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>Interactive Element</h4>
+          <ul>
+            <li>Panel parts + specification card with clickable hotspots.</li>
+            <li>Full-screen launch from the embedded interactive.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge ar">AR</span>
+        <span class="scene-title">6. AR Experience — Place the Panel in Your Space</span>
+        <span class="scene-dur">~2:00</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Learning Objective</h4>
+          <ul>
+            <li>Let the learner visualise a life-size panel on a rooftop or floor.</li>
+            <li>Reinforce physical scale and placement constraints.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>How It Works</h4>
+          <ul>
+            <li>iPhone Safari → AR Quick Look via <code>panel.usdz</code>.</li>
+            <li>Android Chrome → model-viewer WebXR / Scene Viewer.</li>
+            <li>Desktop → 3D preview + QR code to open on phone.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene">
+      <div class="scene-header">
+        <span class="badge assess">Assessment</span>
+        <span class="scene-title">7. Knowledge Check</span>
+        <span class="scene-dur">~1:00</span>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h4>Questions</h4>
+          <ul>
+            <li>Q1 MCQ: Which layer faces the sun?</li>
+            <li>Q2 MCQ: Which technology produces most power per m²?</li>
+            <li>Q3 Matching: Pmax / Voc / Isc meanings.</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h4>SCORM Reporting</h4>
+          <ul>
+            <li>Score raw is sent to the LMS.</li>
+            <li>Lesson status flips to completed on pass.</li>
+            <li>Interactions are recorded per question.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <h2>Technical Specifications</h2>
+    <div class="specs">
+      <div class="spec"><span class="spec-key">Framework</span><span class="spec-val">Adapt Framework 5.56.2</span></div>
+      <div class="spec"><span class="spec-key">SCORM Version</span><span class="spec-val">SCORM 1.2</span></div>
+      <div class="spec"><span class="spec-key">Runtime Wrapper</span><span class="spec-val">pipwerks SCORM API wrapper</span></div>
+      <div class="spec"><span class="spec-key">Build Tool</span><span class="spec-val">Node.js + Grunt</span></div>
+      <div class="spec"><span class="spec-key">3D / AR Engine</span><span class="spec-val">Google model-viewer 3.5.0, three.js 0.160</span></div>
+      <div class="spec"><span class="spec-key">Front-end</span><span class="spec-val">React 16 + Backbone.js + LESS</span></div>
+      <div class="spec"><span class="spec-key">Hosting</span><span class="spec-val">GitHub Pages</span></div>
+      <div class="spec"><span class="spec-key">Video</span><span class="spec-val">HTML5 MP4 with first-frame thumbnails</span></div>
+      <div class="spec"><span class="spec-key">Package Size</span><span class="spec-val">~11 MB SCORM 1.2 zip</span></div>
+      <div class="spec"><span class="spec-key">Devices</span><span class="spec-val">Desktop, tablet, mobile (AR requires phone)</span></div>
+    </div>
+
+    <h2>Client Deliverables</h2>
+    <div class="deliverables">
+      <div class="del">
+        <div class="icon">📦</div>
+        <div class="title">SCORM 1.2 Package</div>
+        <div class="desc">Ready for upload to Moodle, SCORM Cloud, TalentLMS, Docebo, etc.</div>
+        <div class="desc"><a href="/Solar_PV_Adapt_SCORM12.zip">Solar_PV_Adapt_SCORM12.zip</a></div>
+      </div>
+      <div class="del">
+        <div class="icon">🌐</div>
+        <div class="title">Live Preview</div>
+        <div class="desc">Share this URL for browser review before LMS upload.</div>
+        <div class="desc"><a href="https://nikhilsaini-iitj.github.io/Solar_PV_Adapt_SCORM12/">GitHub Pages Preview</a></div>
+      </div>
+      <div class="del">
+        <div class="icon">📁</div>
+        <div class="title">Source Repository</div>
+        <div class="desc">Full build files, manifest, and assets.</div>
+        <div class="desc"><a href="https://github.com/nikhilsaini-iitj/Solar_PV_Adapt_SCORM12">GitHub Repo</a></div>
+      </div>
+      <div class="del">
+        <div class="icon">📋</div>
+        <div class="title">This Storyboard</div>
+        <div class="desc">Scene-by-scene learning design + client need statement.</div>
+        <div class="desc">SolarPV_Client_Storyboard.html</div>
+      </div>
+    </div>
+
+    <h2>How to Run Internally</h2>
+    <p>1. Extract <code>Solar_PV_Adapt_SCORM12.zip</code>.<br>
+    2. Serve the folder locally:</p>
+    <p><code>python3 -m http.server 8000</code></p>
+    <p>3. Open <code>http://localhost:8000/scorm_test_harness.html</code> for cookie-based testing, or upload the zip directly to a real LMS.</p>
+  </section>
+
+  <footer>
+    Solar PV Unit 2 — Client Storyboard & Delivery Pack · Generated 25 Jun 2026
+  </footer>
+</body>
+</html>
