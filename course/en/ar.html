@@ -23,6 +23,14 @@
     height: 100vh;
     display: block;
   }
+  #xr-canvas {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: none;
+    z-index: 1;
+  }
   .header {
     position: absolute;
     top: 0;
@@ -37,33 +45,45 @@
     line-height: 1.4;
   }
   .header b { color: #F2CB73; }
-  .ar-btn {
+  .ar-btn, .ar-btn-secondary {
     position: absolute;
-    bottom: 28px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 20;
-    background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
-    color: #0b1622;
     border: none;
     border-radius: 12px;
     padding: 14px 24px;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
-    box-shadow: 0 8px 24px rgba(242, 203, 115, 0.35);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
     text-decoration: none;
+    justify-content: center;
+    white-space: nowrap;
+  }
+  .ar-btn {
+    bottom: 28px;
+    background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
+    color: #0b1622;
   }
   .ar-btn:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+  .ar-btn-secondary {
+    bottom: 90px;
+    background: rgba(255, 255, 255, 0.1);
+    color: #F4EFE6;
+    border: 1px solid rgba(167, 188, 210, 0.25);
+    padding: 10px 18px;
+    font-size: 13px;
+  }
   .error, .fallback {
     position: absolute;
-    bottom: 100px;
+    bottom: 152px;
     left: 16px;
     right: 16px;
     z-index: 30;
@@ -88,6 +108,30 @@
     font-size: 12px;
     text-align: center;
   }
+  #xr-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 25;
+    pointer-events: none;
+    display: none;
+  }
+  #xr-overlay .ar-btn,
+  #xr-overlay .ar-btn-secondary {
+    pointer-events: auto;
+  }
+  #tracking-status {
+    position: absolute;
+    top: 72px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 22, 38, 0.8);
+    color: #F2CB73;
+    padding: 8px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+    display: none;
+  }
 </style>
 </head>
 <body>
@@ -97,8 +141,9 @@
 
 <!--
   AR delivery strategy:
-  - Android: model-viewer WebXR / Scene Viewer via GLB.
-  - iOS: direct AR Quick Look link to panel.usdz (most reliable on Safari).
+  - iOS: direct AR Quick Look link to panel.usdz (Apple controls placement UX).
+  - Android Chrome: custom WebXR auto-tracking mode (panel follows floor as you move).
+  - Other Android / fallback: model-viewer WebXR / Scene Viewer.
 -->
 <model-viewer
   id="viewer"
@@ -120,14 +165,27 @@
   style="display: block;">
 </model-viewer>
 
-<!-- iOS AR Quick Look direct link -->
+<canvas id="xr-canvas"></canvas>
+
+<div id="xr-overlay">
+  <div id="tracking-status">Finding floor…</div>
+  <button id="lock-btn" class="ar-btn-secondary" style="bottom: 96px;">🔓 Lock position</button>
+  <button id="exit-ar-btn" class="ar-btn" style="bottom: 28px;">✕ Exit AR</button>
+</div>
+
+<!-- iOS AR Quick Look direct link (manual placement) -->
 <a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn" style="display:none;">
   ⛶ View in AR
 </a>
 
-<!-- Android / WebXR fallback button -->
-<button id="android-ar" class="ar-btn" style="display:none;" onclick="startAndroidAR()">
-  ⛶ View in AR
+<!-- Android Auto-track AR (WebXR) -->
+<button id="auto-ar" class="ar-btn" style="display:none;" onclick="startAutoAR()">
+  ⛶ Auto-track AR
+</button>
+
+<!-- Android / WebXR manual fallback -->
+<button id="android-ar" class="ar-btn-secondary" style="display:none; bottom: 96px;" onclick="startAndroidAR()">
+  Manual AR
 </button>
 
 <div class="tips" id="tips">
@@ -141,12 +199,21 @@
 </div>
 
 <script type="module">
+  import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+  import { GLTFLoader } from 'https://unpkg.com/three@0.160.0/examples/jsm/loaders/GLTFLoader.js';
+
   const viewer = document.getElementById('viewer');
   const iosBtn = document.getElementById('ios-ar');
+  const autoBtn = document.getElementById('auto-ar');
   const androidBtn = document.getElementById('android-ar');
   const tips = document.getElementById('tips');
   const errorBox = document.getElementById('error');
   const fallback = document.getElementById('fallback');
+  const xrCanvas = document.getElementById('xr-canvas');
+  const xrOverlay = document.getElementById('xr-overlay');
+  const lockBtn = document.getElementById('lock-btn');
+  const exitArBtn = document.getElementById('exit-ar-btn');
+  const trackingStatus = document.getElementById('tracking-status');
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = /android/i.test(navigator.userAgent);
@@ -155,12 +222,12 @@
   // iOS Safari: use direct AR Quick Look link (most reliable)
   if (isIOS) {
     iosBtn.style.display = 'flex';
-    tips.style.bottom = '96px';
+    tips.innerHTML = 'Tap <b>View in AR</b>, then tap the floor/wall to place the panel.<br>Drag with one finger to reposition; pinch to resize.';
   } else if (isAndroid) {
+    autoBtn.style.display = 'flex';
     androidBtn.style.display = 'flex';
-    tips.style.bottom = '96px';
+    tips.innerHTML = '<b>Auto-track AR</b> follows the floor as you move your phone.<br><b>Manual AR</b> uses Google Scene Viewer.';
   } else {
-    // Desktop / other: show 3D preview, hide tips, show fallback note
     tips.style.display = 'none';
     fallback.style.display = 'block';
     fallback.style.bottom = '28px';
@@ -181,10 +248,187 @@
     console.error('model-viewer error', e.detail);
   });
 
-  // If iOS but not Safari, the rel=ar link may not work; give a hint
   if (isIOS && !isSafari) {
-    tips.textContent = 'For best AR results, open this page in Safari.';
+    tips.innerHTML += '<br>For best AR results, open this page in Safari.';
   }
+
+  // ---------- WebXR auto-tracking AR ----------
+  let renderer = null;
+  let scene = null;
+  let camera = null;
+  let panelModel = null;
+  let xrSession = null;
+  let xrRefSpace = null;
+  let xrHitTestSource = null;
+  let isLocked = false;
+  let panelYOffset = 0;
+  let currentExitHandler = null;
+
+  async function initThree() {
+    if (renderer) return;
+    renderer = new THREE.WebGLRenderer({ canvas: xrCanvas, alpha: true, antialias: true });
+    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.xr.enabled = true;
+
+    scene = new THREE.Scene();
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    scene.add(hemi);
+    const dir = new THREE.DirectionalLight(0xffffff, 1.5);
+    dir.position.set(1, 2, 1);
+    scene.add(dir);
+
+    camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
+
+    // Load panel GLB
+    const loader = new GLTFLoader();
+    await new Promise((resolve, reject) => {
+      loader.load('panel.glb', (gltf) => {
+        panelModel = gltf.scene;
+        // Panel is portrait ~1.0 x 1.69 m; in AR we show life-size
+        panelModel.scale.setScalar(1);
+        panelModel.rotation.x = 0;
+        panelModel.visible = false;
+
+        // Compute offset so bottom of panel sits exactly on the floor hit point
+        const box = new THREE.Box3().setFromObject(panelModel);
+        panelYOffset = -box.min.y;
+        panelModel.position.y = panelYOffset;
+
+        scene.add(panelModel);
+        resolve();
+      }, undefined, reject);
+    });
+  }
+
+  window.startAutoAR = async () => {
+    if (!navigator.xr) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'Auto-tracking AR requires WebXR. Use Chrome on a recent Android phone.';
+      return;
+    }
+    const supported = await navigator.xr.isSessionSupported('immersive-ar').catch(() => false);
+    if (!supported) {
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'WebXR AR is not supported on this device/browser.';
+      return;
+    }
+
+    errorBox.style.display = 'none';
+    await initThree();
+
+    try {
+      xrSession = await navigator.xr.requestSession('immersive-ar', {
+        requiredFeatures: ['hit-test'],
+        optionalFeatures: ['dom-overlay'],
+        domOverlay: { root: xrOverlay }
+      });
+
+      xrOverlay.style.display = 'block';
+      viewer.style.display = 'none';
+      iosBtn.style.display = 'none';
+      autoBtn.style.display = 'none';
+      androidBtn.style.display = 'none';
+      tips.style.display = 'none';
+      fallback.style.display = 'none';
+      xrCanvas.style.display = 'block';
+      trackingStatus.style.display = 'block';
+
+      renderer.xr.setSession(xrSession);
+
+      xrRefSpace = await xrSession.requestReferenceSpace('local-floor');
+      const viewerSpace = await xrSession.requestReferenceSpace('viewer');
+      xrHitTestSource = await xrSession.requestHitTestSource({ space: viewerSpace });
+
+      currentExitHandler = () => xrSession && xrSession.end();
+      xrSession.addEventListener('end', onXRSessionEnd);
+      lockBtn.addEventListener('click', toggleLock);
+      exitArBtn.addEventListener('click', currentExitHandler);
+
+      renderer.setAnimationLoop((time, frame) => {
+        if (!frame) return;
+
+        const pose = frame.getViewerPose(xrRefSpace);
+        if (pose && xrHitTestSource && panelModel && !isLocked) {
+          const hits = frame.getHitTestResults(xrHitTestSource);
+          if (hits.length) {
+            const hitPose = hits[0].getPose(xrRefSpace);
+            panelModel.visible = true;
+
+            // Position on floor at the hit point, keeping bottom on floor
+            panelModel.position.set(
+              hitPose.transform.position.x,
+              hitPose.transform.position.y + panelYOffset,
+              hitPose.transform.position.z
+            );
+
+            // Slight yaw toward camera so the front face points at the user
+            const camPos = new THREE.Vector3();
+            camPos.setFromMatrixPosition(camera.matrixWorld);
+            const lookTarget = panelModel.position.clone();
+            lookTarget.y = camPos.y;
+            panelModel.lookAt(lookTarget);
+
+            trackingStatus.textContent = 'Tracking floor — moving with you';
+            trackingStatus.style.color = '#A9D6E5';
+          } else {
+            trackingStatus.textContent = 'Finding floor… point at the ground';
+            trackingStatus.style.color = '#F2CB73';
+          }
+        }
+
+        renderer.render(scene, camera);
+      });
+
+    } catch (err) {
+      console.error(err);
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'Could not start AR: ' + err.message;
+    }
+  };
+
+  function toggleLock() {
+    isLocked = !isLocked;
+    lockBtn.textContent = isLocked ? '🔒 Unlock position' : '🔓 Lock position';
+    trackingStatus.textContent = isLocked ? 'Position locked' : 'Tracking floor…';
+    trackingStatus.style.color = isLocked ? '#F2CB73' : '#A9D6E5';
+  }
+
+  function onXRSessionEnd() {
+    if (renderer) renderer.setAnimationLoop(null);
+    if (xrHitTestSource) { xrHitTestSource.cancel(); xrHitTestSource = null; }
+    xrSession = null;
+    xrRefSpace = null;
+
+    xrOverlay.style.display = 'none';
+    xrCanvas.style.display = 'none';
+    trackingStatus.style.display = 'none';
+
+    viewer.style.display = 'block';
+    if (isIOS) iosBtn.style.display = 'flex';
+    if (isAndroid) {
+      autoBtn.style.display = 'flex';
+      androidBtn.style.display = 'flex';
+      tips.style.display = 'block';
+    }
+
+    lockBtn.removeEventListener('click', toggleLock);
+    if (currentExitHandler) {
+      exitArBtn.removeEventListener('click', currentExitHandler);
+      currentExitHandler = null;
+    }
+    isLocked = false;
+    lockBtn.textContent = '🔓 Lock position';
+  }
+
+  window.addEventListener('resize', () => {
+    if (renderer && !renderer.xr.isPresenting) {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+  });
 </script>
 </body>
 </html>
