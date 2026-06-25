@@ -80,6 +80,16 @@
     opacity: 0;
     pointer-events: none;
   }
+  .ios-ar-link img {
+    position: static;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    opacity: 1;
+    margin-right: 10px;
+    object-fit: cover;
+    pointer-events: auto;
+  }
   .ar-btn-text {
     position: relative;
     z-index: 1;
@@ -283,9 +293,9 @@
   <button id="exit-ar-btn" class="ar-btn" style="bottom: 28px;">✕ Exit AR</button>
 </div>
 
-<!-- iOS AR Quick Look direct link (manual placement). Apple requires an img child. -->
-<a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn" style="display:none;">
-  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;" />
+<!-- iOS AR Quick Look direct link. Apple requires an img child as FIRST child, and Safari needs it to have visible layout. -->
+<a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn ios-ar-link" style="display:none;">
+  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" />
   <span class="ar-btn-text">⛶ View in AR</span>
 </a>
 
