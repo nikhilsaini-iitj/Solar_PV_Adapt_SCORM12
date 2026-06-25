@@ -1,111 +1,91 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
   <defs>
     <linearGradient id="darkSky" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#0a1626"/>
-      <stop offset="35%" stop-color="#13243c"/>
-      <stop offset="70%" stop-color="#1d3a57"/>
-      <stop offset="100%" stop-color="#244b6e"/>
+      <stop offset="0%" stop-color="#050b14"/>
+      <stop offset="40%" stop-color="#0a1628"/>
+      <stop offset="75%" stop-color="#132238"/>
+      <stop offset="100%" stop-color="#1a2f4a"/>
     </linearGradient>
-    <radialGradient id="sunGlow" cx="78%" cy="18%" r="45%">
-      <stop offset="0%" stop-color="#fff7d6"/>
-      <stop offset="15%" stop-color="#ffdf80"/>
-      <stop offset="35%" stop-color="#ffb300" stop-opacity="0.6"/>
-      <stop offset="60%" stop-color="#e98a00" stop-opacity="0.2"/>
-      <stop offset="100%" stop-color="#e98a00" stop-opacity="0"/>
+    <radialGradient id="sunGlow" cx="78%" cy="18%" r="38%">
+      <stop offset="0%" stop-color="#fff5d1" stop-opacity="0.9"/>
+      <stop offset="18%" stop-color="#f5c842" stop-opacity="0.6"/>
+      <stop offset="40%" stop-color="#f5a623" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#f5a623" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="rayGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#ffb300" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#ffb300" stop-opacity="0"/>
-    </linearGradient>
     <linearGradient id="panelGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-      <stop offset="0%" stop-color="#1a3a5c"/>
-      <stop offset="100%" stop-color="#0d1f33"/>
+      <stop offset="0%" stop-color="#1a2d4a"/>
+      <stop offset="100%" stop-color="#0b1526"/>
     </linearGradient>
     <linearGradient id="panelFace" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#0f2741"/>
-      <stop offset="50%" stop-color="#0a1c2f"/>
-      <stop offset="100%" stop-color="#061626"/>
+      <stop offset="0%" stop-color="#142740"/>
+      <stop offset="50%" stop-color="#0d1b30"/>
+      <stop offset="100%" stop-color="#071221"/>
     </linearGradient>
   </defs>
 
-  <!-- Sky -->
   <rect width="1920" height="1080" fill="url(#darkSky)"/>
   <rect width="1920" height="1080" fill="url(#sunGlow)"/>
 
-  <!-- Sun rays -->
-  <g transform="translate(1498 194)" opacity="0.6">
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(0)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(30)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(60)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(90)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(120)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(150)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(180)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(210)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(240)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(270)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(300)"/>
-    <polygon points="0,0 140,520 -140,520" fill="url(#rayGrad)" transform="rotate(330)"/>
+  <!-- Minimal stars -->
+  <g fill="#fff" opacity="0.14">
+    <circle cx="140" cy="100" r="1.1"/>
+    <circle cx="360" cy="220" r="0.9"/>
+    <circle cx="520" cy="80" r="1.2"/>
+    <circle cx="820" cy="180" r="0.8"/>
+    <circle cx="1180" cy="70" r="1"/>
+    <circle cx="1380" cy="150" r="0.9"/>
   </g>
 
-  <!-- Distant solar panel field (silhouette) -->
-  <g opacity="0.25" transform="translate(0 720)">
-    <path d="M-20,180 L220,60 L460,180 Z" fill="#0d2338"/>
-    <path d="M380,180 L620,70 L860,180 Z" fill="#0b1e30"/>
-    <path d="M780,180 L1040,55 L1300,180 Z" fill="#0d2338"/>
-    <path d="M1180,180 L1460,65 L1740,180 Z" fill="#0b1e30"/>
-    <path d="M1620,180 L1880,75 L2140,180 Z" fill="#0d2338"/>
+  <!-- Distant array silhouettes -->
+  <g opacity="0.35" transform="translate(0 760)">
+    <path d="M-20,180 L220,60 L460,180 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1"/>
+    <path d="M420,180 L680,70 L940,180 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1"/>
+    <path d="M860,180 L1140,60 L1420,180 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1"/>
+    <path d="M1340,180 L1600,75 L1860,180 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1"/>
   </g>
 
-  <!-- Main solar panel array in foreground -->
-  <g transform="translate(240 780)">
-    <!-- Panel 1 -->
+  <!-- Main foreground panel array -->
+  <g transform="translate(340 820)">
     <g transform="translate(0 0)">
-      <path d="M0,160 L200,80 L400,160 L200,240 Z" fill="url(#panelGrad)" stroke="#2a5a85" stroke-width="1"/>
+      <path d="M0,160 L200,80 L400,160 L200,240 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1.5" opacity="0.55"/>
       <path d="M20,150 L200,80 L380,150 L200,220 Z" fill="url(#panelFace)"/>
-      <line x1="120" y1="105" x2="120" y2="195" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="200" y1="80" x2="200" y2="220" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="280" y1="105" x2="280" y2="195" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="70" y1="128" x2="330" y2="128" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="70" y1="160" x2="330" y2="160" stroke="#1a4466" stroke-width="1.5"/>
-      <rect x="180" y="230" width="40" height="50" fill="#142f4a"/>
+      <line x1="120" y1="105" x2="120" y2="195" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="200" y1="80" x2="200" y2="220" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="280" y1="105" x2="280" y2="195" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="70" y1="128" x2="330" y2="128" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="70" y1="160" x2="330" y2="160" stroke="#3a5a7d" stroke-width="1.5"/>
+      <rect x="180" y="230" width="40" height="55" fill="#162a42"/>
     </g>
-    <!-- Panel 2 -->
-    <g transform="translate(360 -40)">
-      <path d="M0,160 L200,80 L400,160 L200,240 Z" fill="url(#panelGrad)" stroke="#2a5a85" stroke-width="1"/>
+    <g transform="translate(420 -30)">
+      <path d="M0,160 L200,80 L400,160 L200,240 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1.5" opacity="0.55"/>
       <path d="M20,150 L200,80 L380,150 L200,220 Z" fill="url(#panelFace)"/>
-      <line x1="120" y1="105" x2="120" y2="195" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="200" y1="80" x2="200" y2="220" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="280" y1="105" x2="280" y2="195" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="70" y1="128" x2="330" y2="128" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="70" y1="160" x2="330" y2="160" stroke="#1a4466" stroke-width="1.5"/>
-      <rect x="180" y="230" width="40" height="50" fill="#142f4a"/>
+      <line x1="120" y1="105" x2="120" y2="195" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="200" y1="80" x2="200" y2="220" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="280" y1="105" x2="280" y2="195" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="70" y1="128" x2="330" y2="128" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="70" y1="160" x2="330" y2="160" stroke="#3a5a7d" stroke-width="1.5"/>
+      <rect x="180" y="230" width="40" height="55" fill="#162a42"/>
     </g>
-    <!-- Panel 3 -->
-    <g transform="translate(720 0)">
-      <path d="M0,160 L200,80 L400,160 L200,240 Z" fill="url(#panelGrad)" stroke="#2a5a85" stroke-width="1"/>
+    <g transform="translate(840 0)">
+      <path d="M0,160 L200,80 L400,160 L200,240 Z" fill="url(#panelGrad)" stroke="#f5c842" stroke-width="1.5" opacity="0.55"/>
       <path d="M20,150 L200,80 L380,150 L200,220 Z" fill="url(#panelFace)"/>
-      <line x1="120" y1="105" x2="120" y2="195" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="200" y1="80" x2="200" y2="220" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="280" y1="105" x2="280" y2="195" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="70" y1="128" x2="330" y2="128" stroke="#1a4466" stroke-width="1.5"/>
-      <line x1="70" y1="160" x2="330" y2="160" stroke="#1a4466" stroke-width="1.5"/>
-      <rect x="180" y="230" width="40" height="50" fill="#142f4a"/>
+      <line x1="120" y1="105" x2="120" y2="195" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="200" y1="80" x2="200" y2="220" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="280" y1="105" x2="280" y2="195" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="70" y1="128" x2="330" y2="128" stroke="#3a5a7d" stroke-width="1.5"/>
+      <line x1="70" y1="160" x2="330" y2="160" stroke="#3a5a7d" stroke-width="1.5"/>
+      <rect x="180" y="230" width="40" height="55" fill="#162a42"/>
     </g>
   </g>
 
-  <!-- Subtle grid lines suggesting energy/data -->
-  <g opacity="0.08" stroke="#4fc8ff" stroke-width="0.5" fill="none">
-    <line x1="0" y1="600" x2="1920" y2="600"/>
-    <line x1="0" y1="700" x2="1920" y2="700"/>
-    <line x1="0" y1="800" x2="1920" y2="800"/>
-    <line x1="200" y1="0" x2="200" y2="1080"/>
-    <line x1="600" y1="0" x2="600" y2="1080"/>
-    <line x1="1000" y1="0" x2="1000" y2="1080"/>
-    <line x1="1400" y1="0" x2="1400" y2="1080"/>
-    <line x1="1800" y1="0" x2="1800" y2="1080"/>
+  <!-- Gold corner brackets -->
+  <g stroke="#f5c842" stroke-width="2.5" fill="none" opacity="0.5">
+    <path d="M50 50 L90 50 M50 50 L50 90"/>
+    <path d="M1870 50 L1830 50 M1870 50 L1870 90"/>
+    <path d="M50 1030 L50 990 M50 1030 L90 1030"/>
+    <path d="M1870 1030 L1830 1030 M1870 1030 L1870 990"/>
   </g>
 
-  <!-- Bottom fade to solid -->
-  <rect y="900" width="1920" height="180" fill="url(#darkSky)" opacity="0.85"/>
+  <!-- Bottom fade -->
+  <rect y="960" width="1920" height="120" fill="url(#darkSky)" opacity="0.9"/>
 </svg>
