@@ -291,31 +291,49 @@
   const silhouetteBtn = document.getElementById('silhouetteBtn');
   const shadowBtn = document.getElementById('shadowBtn');
 
-  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
-  const isAndroid = /android/i.test(navigator.userAgent);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+  const isIOS = /iPad|iPhone|iPod|iOS/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isAndroid = /android/i.test(ua);
+  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
+  const isMobile = isIOS || isAndroid || /mobile/i.test(ua);
   let arMode = isIOS ? 'ios-quicklook' : (isAndroid ? 'android-auto' : 'generic');
   let arStartTime = 0;
   let lockCount = 0;
 
-  // iOS Safari: use direct AR Quick Look link (most reliable)
+  function supportsQuickLook() {
+    const a = document.createElement('a');
+    return a.relList && a.relList.supports && a.relList.supports('ar');
+  }
+
+  // iOS: use direct AR Quick Look link (most reliable)
   if (isIOS) {
     document.body.classList.add('ios');
     iosBtn.style.display = 'flex';
     launchBtn.style.display = 'none';
     tips.innerHTML = 'Tap <b>View in AR</b>, then tap the floor/wall to place the panel.<br>Drag with one finger to reposition; pinch to resize.';
+    // If rel=ar is unsupported in this WebView, swap to a plain button that opens the USDZ URL
+    if (!supportsQuickLook()) {
+      iosBtn.style.display = 'none';
+      launchBtn.style.display = 'flex';
+      launchBtn.textContent = '⛶ View in AR';
+      launchBtn.onclick = () => { arMode = 'ios-quicklook-fallback'; xapiStart(); window.location.href = 'panel.usdz'; };
+    }
   } else if (isAndroid) {
     document.body.classList.add('android');
     autoBtn.style.display = 'flex';
     androidBtn.style.display = 'flex';
     launchBtn.style.display = 'none';
     tips.innerHTML = '<b>Auto-track AR</b> follows the floor as you move your phone.<br><b>Manual AR</b> uses Google Scene Viewer.';
-  } else {
-    // Desktop / other: generic launch button tries model-viewer AR first
+  } else if (!isMobile) {
+    // Desktop: generic launch button tries model-viewer AR first
     launchBtn.style.display = 'flex';
     tips.style.display = 'none';
     fallback.style.display = 'block';
     fallback.style.bottom = '28px';
+  } else {
+    // Unknown mobile: show generic launch, try model-viewer first then USDZ fallback
+    launchBtn.style.display = 'flex';
+    launchBtn.textContent = '⛶ Launch AR';
   }
 
   function xapiStart() {
@@ -328,10 +346,13 @@
   }
 
   window.startGenericAR = () => {
-    arMode = 'generic-model-viewer';
+    arMode = isIOS ? 'ios-quicklook-fallback' : 'generic-model-viewer';
     xapiStart();
-    if (viewer.canActivateAR) {
+    if (!isIOS && viewer.canActivateAR) {
       viewer.activateAR();
+    } else if (isIOS) {
+      // Direct USDZ fallback for iOS WebView / browsers without model-viewer AR
+      window.location.href = 'panel.usdz';
     } else {
       errorBox.style.display = 'block';
       errorBox.textContent = 'AR is not ready on this browser. Try Safari on iPhone or Chrome on a recent Android phone.';
