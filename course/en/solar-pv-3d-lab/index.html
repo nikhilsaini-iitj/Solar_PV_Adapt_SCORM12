@@ -1,0 +1,826 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Solar PV Module — 3D Virtual Lab</title>
+<style>
+  :root{ /* LIGHT (default vars) */
+    --bg:#e9eff6; --panel:#ffffff; --panelb:#aebfd2;
+    --accent:#E98A00; --accent2:#1F6F8B; --accentInk:#8a4d00; --ok:#2E7D46; --bad:#c0392b;
+    --txt:#16242f; --muted:#52616f; --line:#bccadb;
+    --btnbg:#eef3f9; --btnhover:#e2eaf3; --chipbg:#eef3f8; --barbg:#e2eaf3;
+    --tagbg:rgba(255,255,255,.97); --tagtxt:#10384a; --barfade:rgba(255,255,255,.96);
+    --panelshadow:0 10px 26px rgba(20,45,75,.20);
+  }
+  body.dark{ /* DARK */
+    --bg:#0a1626; --panel:#13243c; --panelb:#33506f;
+    --accent:#FFB300; --accent2:#4fc8ff; --accentInk:#FFC23D; --ok:#37d07a; --bad:#ff6b6b;
+    --txt:#eaf2fb; --muted:#a7bdd2; --line:#2c4a66;
+    --btnbg:#14283f; --btnhover:#1d3a57; --chipbg:#0e2236; --barbg:#0e2236;
+    --tagbg:rgba(10,20,32,.92); --tagtxt:#eaf6ff; --barfade:rgba(8,16,26,.92);
+    --panelshadow:0 12px 30px rgba(0,0,0,.5);
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);color:var(--txt);
+    font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif;transition:background .25s}
+  #app{position:fixed;inset:0}
+  canvas{display:block}
+  /* Top bar */
+  #topbar{position:absolute;top:0;left:0;right:0;height:54px;display:flex;align-items:center;
+    gap:12px;padding:0 16px;background:linear-gradient(180deg,var(--barfade),transparent);
+    pointer-events:none;z-index:5}
+  .themeToggle{pointer-events:auto;margin-left:auto;border:1px solid var(--panelb);
+    background:var(--panel);color:var(--txt);border-radius:20px;padding:6px 14px;font-size:12px;
+    font-weight:600;cursor:pointer;box-shadow:var(--panelshadow)}
+  .themeToggle:hover{border-color:var(--accent2)}
+  /* first-run onboarding */
+  #intro{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:rgba(4,10,18,.55);z-index:15;padding:16px}
+  #intro.hide{display:none}
+  .introCard{max-width:460px;background:var(--panel);border:1.5px solid var(--panelb);
+    border-radius:16px;padding:24px 26px;box-shadow:var(--panelshadow)}
+  .introCard h3{margin:0 0 8px;font-size:20px;color:var(--txt)}
+  .introCard p{margin:0 0 18px;font-size:13.5px;color:var(--muted);line-height:1.6}
+  .introCard p b{color:var(--accentInk)}
+  .introCard .go{display:inline-flex;align-items:center;gap:8px;border:1px solid var(--accent);
+    background:linear-gradient(180deg,#FFB300,#E98A00);color:#3a2400;border-radius:10px;
+    padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer}
+  #topbar .logo{width:30px;height:30px;border-radius:7px;background:
+    radial-gradient(circle at 30% 30%,#ffd95e,#ffb300 60%,#e98a00);box-shadow:0 0 14px rgba(255,179,0,.5)}
+  #topbar h1{font-size:16px;margin:0;font-weight:600;letter-spacing:.2px}
+  #topbar h1 span{color:var(--muted);font-weight:400;font-size:13px}
+  /* Generic panel */
+  .panel{position:absolute;background:var(--panel);border:1.5px solid var(--panelb);
+    border-radius:14px;box-shadow:var(--panelshadow);z-index:6}
+  .panel h2{font-size:12px;text-transform:uppercase;letter-spacing:1.2px;color:var(--accentInk);
+    margin:0 0 10px;font-weight:700}
+  /* Left controls */
+  #controls{left:16px;top:66px;width:230px;padding:14px}
+  .grp{margin-bottom:16px}
+  .grp:last-child{margin-bottom:4px}
+  .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.8px;margin:0 0 7px}
+  .segs{display:flex;gap:6px}
+  .seg{flex:1;border:1px solid var(--line);background:var(--btnbg);color:var(--txt);
+    border-radius:9px;padding:9px 4px;font-size:12px;font-weight:600;cursor:pointer;
+    transition:.15s;text-align:center}
+  .seg:hover{border-color:var(--accent2)}
+  .seg.on{background:linear-gradient(180deg,#FFB300,#E98A00);color:#3a2400;border-color:#E98A00}
+  .btn{display:flex;align-items:center;gap:9px;width:100%;border:1px solid var(--line);
+    background:var(--btnbg);color:var(--txt);border-radius:10px;padding:10px 12px;font-size:13px;
+    font-weight:600;cursor:pointer;transition:.15s;margin-bottom:8px}
+  .btn:hover{border-color:var(--accent2);background:var(--btnhover)}
+  .btn .ic{font-size:15px;width:18px;text-align:center}
+  .btn.on{border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+  .slider{width:100%;margin:2px 0 0;accent-color:var(--accent)}
+  .hint{font-size:11px;color:var(--muted);line-height:1.45;margin:8px 0 0}
+  .condrow{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:8px 0 2px}
+  .condrow b{color:var(--ink);font-weight:700}
+  .perfBox{margin-top:14px;padding-top:12px;border-top:2px solid var(--line)}
+  .perfBox .big{font-size:13px}
+  .perfNote{font-size:11px;color:var(--muted);line-height:1.4;margin:8px 0 0}
+  #perfW{color:var(--accentInk)}
+  /* Spec card */
+  #spec{right:16px;top:66px;width:268px;padding:14px;max-height:calc(100% - 150px);overflow:auto}
+  #spec .typeName{font-size:18px;font-weight:700;margin:0 0 2px}
+  #spec .typeTag{display:inline-block;font-size:10.5px;padding:3px 8px;border-radius:20px;
+    background:var(--chipbg);border:1px solid var(--line);color:var(--muted);margin-bottom:12px}
+  .spec-row{display:flex;justify-content:space-between;gap:10px;padding:7px 0;border-top:1px solid var(--line);font-size:12.5px}
+  .spec-row:first-of-type{border-top:none}
+  .spec-row .k{color:var(--muted)}
+  .spec-row .v{font-weight:600;text-align:right}
+  .bar{height:7px;border-radius:5px;background:var(--barbg);overflow:hidden;margin-top:4px}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,#36c2ff,#ffb300)}
+  /* Info popover for hotspots */
+  #info{left:50%;bottom:74px;transform:translateX(-50%);max-width:520px;width:calc(100% - 360px);
+    padding:12px 16px;display:none}
+  #info b{color:var(--accent)}
+  #info p{margin:4px 0 0;font-size:13px;color:var(--txt);line-height:1.5}
+  /* Hotspot labels (3D-projected) */
+  .tag{position:absolute;transform:translate(-50%,-120%);background:var(--tagbg);
+    border:1px solid var(--accent2);color:var(--tagtxt);font-size:11px;font-weight:600;padding:4px 9px;
+    border-radius:20px;pointer-events:auto;cursor:pointer;white-space:nowrap;z-index:6;
+    box-shadow:0 4px 12px rgba(0,0,0,.28)}
+  .tag::after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);
+    border:5px solid transparent;border-top-color:var(--accent2)}
+  .tag.dim{opacity:.45;border-color:var(--line)}
+  /* Test panel */
+  #test{left:50%;top:50%;transform:translate(-50%,-50%);width:430px;max-width:calc(100% - 32px);
+    padding:20px;display:none;text-align:center}
+  #test .q{font-size:15px;font-weight:600;margin:6px 0 16px;line-height:1.4}
+  #test .opt{display:block;width:100%;margin:8px 0;padding:12px;border-radius:10px;
+    border:1px solid var(--line);background:var(--btnbg);color:var(--txt);font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+  #test .opt:hover{border-color:var(--accent2);background:var(--btnhover)}
+  #test .opt.correct{background:rgba(46,204,113,.18);border-color:var(--ok)}
+  #test .opt.wrong{background:rgba(255,90,90,.16);border-color:var(--bad)}
+  #test .progress{font-size:11px;color:var(--muted);letter-spacing:1px;text-transform:uppercase}
+  #test .fb{font-size:13px;min-height:20px;margin-top:12px;line-height:1.45}
+  #test .fb.ok{color:var(--ok)} #test .fb.no{color:var(--bad)}
+  #test .next{margin-top:14px;display:none}
+  #test .scoreBig{font-size:40px;font-weight:800;margin:6px 0}
+  .primary{background:linear-gradient(180deg,#ffb300,#e98a00)!important;color:#16110a!important;border-color:#ffb300!important}
+  /* footer status */
+  #status{position:absolute;left:16px;bottom:14px;font-size:11px;color:var(--muted);z-index:6}
+  #scormDot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#b3c0cd;margin-right:6px;vertical-align:middle}
+  #scormDot.live{background:var(--ok);box-shadow:0 0 8px var(--ok)}
+  /* loading */
+  #load{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    background:var(--bg);z-index:20;flex-direction:column;gap:14px}
+  #load .ring{width:46px;height:46px;border:4px solid #d2dce6;border-top-color:#E98A00;
+    border-radius:50%;animation:spin 1s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (max-width:880px){
+    #spec{display:none}
+    #controls{width:190px}
+    #info{width:calc(100% - 230px)}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<div id="topbar">
+  <div class="logo"></div>
+  <h1>Solar PV Module — 3D Virtual Lab <span>· Unit 2: Major Components</span></h1>
+  <button id="themeBtn" class="themeToggle">☀ Light mode</button>
+</div>
+
+<!-- LEFT CONTROLS -->
+<div id="controls" class="panel">
+  <div class="grp">
+    <p class="lbl">Panel technology</p>
+    <div class="segs" id="typeSegs">
+      <div class="seg on" data-type="mono">Mono</div>
+      <div class="seg" data-type="poly">Poly</div>
+      <div class="seg" data-type="thin">Thin-film</div>
+    </div>
+  </div>
+  <div class="grp">
+    <p class="lbl">Module breakdown</p>
+    <button class="btn" id="explodeBtn"><span class="ic">⧉</span> Exploded view</button>
+    <input class="slider" id="explodeSlider" type="range" min="0" max="100" value="0" />
+    <p class="hint">Drag to separate the layers: glass · EVA · cells · EVA · back-sheet · frame.</p>
+  </div>
+  <div class="grp">
+    <p class="lbl">View</p>
+    <button class="btn on" id="spinBtn"><span class="ic">↻</span> Auto-rotate</button>
+    <button class="btn" id="labelBtn"><span class="ic">🏷</span> Component labels</button>
+    <button class="btn" id="resetBtn"><span class="ic">⌖</span> Reset view</button>
+  </div>
+  <div class="grp">
+    <p class="lbl">Operating conditions</p>
+    <div class="condrow"><span>Sunlight</span><b id="irrVal">1000 W/m²</b></div>
+    <input class="slider" id="irrSlider" type="range" min="50" max="1000" step="50" value="1000"/>
+    <div class="condrow"><span>Cell temperature</span><b id="tempVal">25 °C</b></div>
+    <input class="slider" id="tempSlider" type="range" min="10" max="70" step="1" value="25"/>
+    <p class="hint">Change sun and heat — watch the live output, and compare how each technology copes.</p>
+  </div>
+  <div class="grp">
+    <button class="btn primary" id="testBtn"><span class="ic">✓</span> Start knowledge check</button>
+  </div>
+</div>
+
+<!-- SPEC CARD -->
+<div id="spec" class="panel">
+  <h2>Specification sheet</h2>
+  <p class="typeName" id="spType">Monocrystalline</p>
+  <span class="typeTag" id="spTag">Mono-PERC · 60-cell</span>
+  <div id="spRows"></div>
+  <div style="margin-top:12px">
+    <div class="spec-row" style="border-top:none;padding-bottom:2px"><span class="k">Module efficiency (STC)</span><span class="v" id="spEffV">21%</span></div>
+    <div class="bar"><i id="spEffBar" style="width:84%"></i></div>
+  </div>
+  <div class="perfBox">
+    <div class="spec-row" style="border-top:none;padding-bottom:2px"><span class="k">Live power output</span><span class="v" id="perfW">—</span></div>
+    <div class="bar"><i id="perfBar" style="width:0%;background:linear-gradient(90deg,#2E7D46,#E98A00)"></i></div>
+    <div class="spec-row" style="padding-top:6px"><span class="k">Efficiency at this temp</span><span class="v" id="perfEff">—</span></div>
+    <p class="perfNote" id="perfNote"></p>
+  </div>
+</div>
+
+<!-- HOTSPOT INFO -->
+<div id="info" class="panel"><b id="infoTitle"></b><p id="infoBody"></p></div>
+
+<!-- TEST -->
+<div id="test" class="panel">
+  <p class="progress" id="tProg">Question 1 / 3</p>
+  <div id="tBody">
+    <p class="q" id="tQ"></p>
+    <div id="tOpts"></div>
+    <p class="fb" id="tFb"></p>
+    <button class="btn next primary" id="tNext">Next ▸</button>
+  </div>
+  <div id="tResult" style="display:none">
+    <p class="progress">Result</p>
+    <p class="scoreBig" id="tScore">0%</p>
+    <p class="fb" id="tVerdict"></p>
+    <button class="btn primary" id="tClose" style="margin-top:14px">Close &amp; continue</button>
+  </div>
+</div>
+
+<div id="status"><span id="scormDot"></span><span id="scormTxt">Standalone (no LMS)</span></div>
+
+<div id="load"><div class="ring"></div><div style="color:#5A6B7A;font-size:13px">Loading 3D virtual lab…</div></div>
+
+<div id="intro"><div class="introCard">
+  <h3>Welcome to the 3D panel lab</h3>
+  <p><b>Drag</b> to rotate · <b>scroll</b> to zoom. Open <b>Exploded view</b> to peel the layers, switch
+  <b>Mono / Poly / Thin-film</b> to compare the spec sheet, and change <b>Sunlight &amp; temperature</b>
+  to watch the live power output. Toggle <b>Light / Dark</b> in the top-right.</p>
+  <button class="go" id="introGo">Start exploring →</button>
+</div></div>
+
+<script src="three.min.js"></script>
+<script>
+/* ============================================================================
+   SOLAR PV MODULE — 3D VIRTUAL LAB
+   Self-contained interactive WebGL simulation for a Storyline Web Object.
+   Topic: Unit 2 — Solar panels: types, capacity, size, specification.
+   No external network calls. SCORM 1.2 reporting on test completion.
+   ========================================================================== */
+
+/* ---------- PANEL TYPE DATA (typical India-market values) ----------------- */
+const TYPES = {
+  mono:{
+    name:"Monocrystalline", tag:"Mono-PERC · half-cut · 60-cell",
+    eff:21, effLabel:"19–21%",
+    rows:[
+      ["Cell technology","Single-crystal silicon"],
+      ["Typical power (Pmax)","395 Wp"],
+      ["Cells","60 (120 half-cut)"],
+      ["Module size","1722 × 1134 × 30 mm"],
+      ["Weight","≈ 21 kg"],
+      ["Voc / Isc","41.0 V / 11.9 A"],
+      ["Vmp / Imp","34.2 V / 11.6 A"],
+      ["Temp. coeff. (Pmax)","−0.34 %/°C"],
+      ["Appearance","Black cells, chamfered corners"],
+      ["Best for","Rooftops, limited space, high efficiency"]
+    ],
+    cell:"#0a1018", border:"#05080d", look:"mono", pstc:395, gamma:-0.0034
+  },
+  poly:{
+    name:"Polycrystalline", tag:"Multi-crystalline · 60-cell",
+    eff:16, effLabel:"14–16%",
+    rows:[
+      ["Cell technology","Multi-crystal silicon"],
+      ["Typical power (Pmax)","330 Wp"],
+      ["Cells","60 (6 × 10)"],
+      ["Module size","1956 × 992 × 40 mm"],
+      ["Weight","≈ 22.5 kg"],
+      ["Voc / Isc","45.6 V / 9.3 A"],
+      ["Vmp / Imp","37.4 V / 8.8 A"],
+      ["Temp. coeff. (Pmax)","−0.41 %/°C"],
+      ["Appearance","Blue, speckled square cells"],
+      ["Best for","Budget builds, ground mounts, space available"]
+    ],
+    cell:"#16357e", border:"#0c1f50", look:"poly", pstc:330, gamma:-0.0041
+  },
+  thin:{
+    name:"Thin-film", tag:"CdTe / a-Si · frameless option",
+    eff:12, effLabel:"10–13%",
+    rows:[
+      ["Cell technology","Thin semiconductor layers"],
+      ["Typical power (per area)","Low W/m² (≈115 Wp/module)"],
+      ["Cells","Continuous deposited layers"],
+      ["Module size","Flexible / large-format"],
+      ["Weight","Very light, can be flexible"],
+      ["Voc / Isc","60.0 V / 1.9 A (string)"],
+      ["Vmp / Imp","46.0 V / 1.6 A"],
+      ["Temp. coeff. (Pmax)","−0.25 %/°C (best in heat)"],
+      ["Appearance","Uniform dark, no cell grid"],
+      ["Best for","Hot climates, BIPV, curved/large surfaces"]
+    ],
+    cell:"#241a16", border:"#140e0b", look:"thin", pstc:115, gamma:-0.0025
+  }
+};
+
+/* ---------- LAYER METADATA (for explode + labels + hotspot info) ---------- */
+const LAYER_INFO = {
+  glass:["Tempered front glass","3–4 mm low-iron tempered glass. Transmits sunlight, resists hail and load, and protects the cells."],
+  evaT :["EVA encapsulant (front)","Ethylene-vinyl-acetate film that bonds and seals the cells, blocking moisture and UV."],
+  cells:["Solar cells","The PV cells that convert sunlight to DC electricity. Their material defines mono / poly / thin-film type."],
+  evaB :["EVA encapsulant (back)","Second EVA layer that cushions the cells from the back-sheet and seals the laminate."],
+  back :["Back-sheet","Weatherproof polymer (or glass) layer providing insulation and environmental protection."],
+  frame:["Aluminium frame","Anodised aluminium edge frame. Adds rigidity, mounting points and grounding."],
+  jbox :["Junction box","Houses bypass diodes and the DC output cables (+ and −) that connect to the system."],
+  busbar:["Busbars & fingers","Thin silver conductors that collect current from each cell and carry it across the module."]
+};
+
+/* ============================== THREE SETUP ============================== */
+let scene,camera,renderer,raycaster,clock;
+const app=document.getElementById('app');
+let W=app.clientWidth,H=app.clientHeight;
+
+scene=new THREE.Scene();
+(function(){
+  const c=document.createElement('canvas');c.width=4;c.height=512;
+  const cx=c.getContext('2d');const g=cx.createLinearGradient(0,0,0,512);
+  g.addColorStop(0,'#eef4fb');g.addColorStop(1,'#ccd8e7');
+  cx.fillStyle=g;cx.fillRect(0,0,4,512);
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;scene.background=t;
+})();
+scene.fog=new THREE.Fog(0xd2dded,20,52);
+
+camera=new THREE.PerspectiveCamera(42,W/H,0.1,200);
+const camHome={r:11,theta:-0.5,phi:1.15}; // spherical
+let cam={...camHome},camTarget=new THREE.Vector3(0,0.2,0);
+
+renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+renderer.setSize(W,H);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.shadowMap.enabled=true;
+renderer.shadowMap.type=THREE.PCFSoftShadowMap;
+renderer.outputEncoding=THREE.sRGBEncoding;
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure=1.05;
+app.appendChild(renderer.domElement);
+raycaster=new THREE.Raycaster();
+clock=new THREE.Clock();
+
+/* ---- lights ---- */
+const hemi=new THREE.HemisphereLight(0xffffff,0xd6dee8,1.05);scene.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff2d6,1.5);
+sun.position.set(6,11,7);sun.castShadow=true;
+sun.shadow.mapSize.set(2048,2048);
+sun.shadow.camera.near=1;sun.shadow.camera.far=40;
+sun.shadow.camera.left=-9;sun.shadow.camera.right=9;
+sun.shadow.camera.top=9;sun.shadow.camera.bottom=-9;
+sun.shadow.bias=-0.0004;scene.add(sun);
+const rim=new THREE.DirectionalLight(0x6fb3ff,0.5);rim.position.set(-7,4,-6);scene.add(rim);
+
+/* ---- ground ---- */
+const ground=new THREE.Mesh(
+  new THREE.CircleGeometry(26,64),
+  new THREE.MeshStandardMaterial({color:0xc7d4e3,roughness:1,metalness:0})
+);
+ground.rotation.x=-Math.PI/2;ground.position.y=-3.1;ground.receiveShadow=true;scene.add(ground);
+// subtle grid
+let grid=new THREE.GridHelper(40,40,0x9fb3c8,0xbccadb);grid.position.y=-3.09;
+grid.material.opacity=0.7;grid.material.transparent=true;scene.add(grid);
+
+/* ====================== BUILD THE PV MODULE ============================== */
+const MODULE_W=3.0, MODULE_H=4.6, MODULE_T=0.16;   // scene units (portrait)
+const FRAME=0.16;
+const moduleGroup=new THREE.Group();scene.add(moduleGroup);
+const pickables=[];           // meshes the raycaster can hit (with .userData.key)
+
+/* texture cache per type */
+const texCache={};
+
+function makeCellTexture(type){
+  if(texCache[type]) return texCache[type];
+  const T=TYPES[type], look=T.look;
+  const cw=1024, ch=Math.round(cw*MODULE_H/MODULE_W);
+  const c=document.createElement('canvas');c.width=cw;c.height=ch;
+  const x=c.getContext('2d');
+  // back gap colour (between cells)
+  x.fillStyle = (look==='thin')? '#120d0a' : '#f4f7fb';
+  x.fillRect(0,0,cw,ch);
+
+  if(look==='thin'){
+    // continuous deposited surface with vertical scribe lines + subtle sheen
+    const g=x.createLinearGradient(0,0,cw,ch);
+    g.addColorStop(0,'#2a1f1a');g.addColorStop(.5,'#1c1410');g.addColorStop(1,'#2f231d');
+    x.fillStyle=g;x.fillRect(0,0,cw,ch);
+    x.globalAlpha=.5;x.strokeStyle='#0d0907';x.lineWidth=2;
+    for(let i=0;i<60;i++){const px=i/60*cw;x.beginPath();x.moveTo(px,0);x.lineTo(px,ch);x.stroke();}
+    x.globalAlpha=.08;x.fillStyle='#ff7a3c';
+    for(let i=0;i<2200;i++){x.fillRect(Math.random()*cw,Math.random()*ch,2,2);}
+    x.globalAlpha=1;
+  } else {
+    const cols=6, rows=10, gap=cw*0.012, m=cw*0.02;
+    const cellW=(cw-2*m-(cols-1)*gap)/cols;
+    const cellH=(ch-2*m-(rows-1)*gap)/rows;
+    for(let r=0;r<rows;r++)for(let col=0;col<cols;col++){
+      const px=m+col*(cellW+gap), py=m+r*(cellH+gap);
+      // base cell
+      x.save();
+      x.beginPath();
+      if(look==='mono'){ // chamfered (pseudo-square) corners
+        const ch2=cellW*0.16;
+        x.moveTo(px+ch2,py);x.lineTo(px+cellW-ch2,py);x.lineTo(px+cellW,py+ch2);
+        x.lineTo(px+cellW,py+cellH-ch2);x.lineTo(px+cellW-ch2,py+cellH);
+        x.lineTo(px+ch2,py+cellH);x.lineTo(px,py+cellH-ch2);x.lineTo(px,py+ch2);x.closePath();
+      } else { x.rect(px,py,cellW,cellH); }
+      x.fillStyle=T.cell;x.fill();x.clip();
+      // subtle radial shading
+      const rg=x.createRadialGradient(px+cellW*0.5,py+cellH*0.4,cellW*0.1,px+cellW*0.5,py+cellH*0.5,cellW*0.8);
+      rg.addColorStop(0,'rgba(255,255,255,.08)');rg.addColorStop(1,'rgba(0,0,0,.25)');
+      x.fillStyle=rg;x.fillRect(px,py,cellW,cellH);
+      if(look==='poly'){ // crystalline speckle
+        x.globalAlpha=.5;
+        for(let s=0;s<170;s++){
+          const sx=px+Math.random()*cellW, sy=py+Math.random()*cellH, sz=2+Math.random()*5;
+          x.fillStyle=Math.random()>.5?'rgba(80,120,210,.6)':'rgba(20,40,110,.6)';
+          x.fillRect(sx,sy,sz,sz);
+        }
+        x.globalAlpha=1;
+      }
+      // busbars (vertical) + fingers (horizontal)
+      x.strokeStyle='rgba(200,210,225,.85)';x.lineWidth=Math.max(2,cellW*0.03);
+      for(let b=1;b<=3;b++){const bx=px+cellW*b/4;x.beginPath();x.moveTo(bx,py);x.lineTo(bx,py+cellH);x.stroke();}
+      x.strokeStyle='rgba(190,200,215,.18)';x.lineWidth=1;
+      for(let f=1;f<14;f++){const fy=py+cellH*f/14;x.beginPath();x.moveTo(px,fy);x.lineTo(px+cellW,fy);x.stroke();}
+      x.restore();
+    }
+  }
+  const tex=new THREE.CanvasTexture(c);tex.anisotropy=8;tex.encoding=THREE.sRGBEncoding;
+  texCache[type]=tex;return tex;
+}
+
+/* layer meshes ---------------------------------------------------------- */
+const layers={};
+function planeMesh(w,h,mat){return new THREE.Mesh(new THREE.PlaneGeometry(w,h),mat);}
+
+// cells (textured) — front faces +Z
+const cellMat=new THREE.MeshStandardMaterial({roughness:.42,metalness:.15,emissive:new THREE.Color(0x2a1d00),emissiveIntensity:0});
+layers.cells=planeMesh(MODULE_W-2*FRAME,MODULE_H-2*FRAME,cellMat);
+layers.cells.userData.key='cells';
+
+// glass (translucent)
+const glassMat=new THREE.MeshPhysicalMaterial({color:0xbfe6ff,transparent:true,opacity:.18,
+  roughness:.05,metalness:0,transmission:.6,thickness:.4,clearcoat:1,clearcoatRoughness:.05});
+layers.glass=planeMesh(MODULE_W-2*FRAME,MODULE_H-2*FRAME,glassMat);
+layers.glass.userData.key='glass';
+
+// EVA layers (faint)
+const evaMat=new THREE.MeshStandardMaterial({color:0xffe7a8,transparent:true,opacity:.22,roughness:.7});
+layers.evaT=planeMesh(MODULE_W-2*FRAME,MODULE_H-2*FRAME,evaMat);layers.evaT.userData.key='evaT';
+layers.evaB=planeMesh(MODULE_W-2*FRAME,MODULE_H-2*FRAME,evaMat.clone());layers.evaB.userData.key='evaB';
+
+// backsheet
+const backMat=new THREE.MeshStandardMaterial({color:0xf3f5f8,roughness:.85,metalness:0,side:THREE.DoubleSide});
+layers.back=planeMesh(MODULE_W-2*FRAME,MODULE_H-2*FRAME,backMat);layers.back.userData.key='back';
+
+// frame (4 bars)
+const frameMat=new THREE.MeshStandardMaterial({color:0xd8dde4,roughness:.3,metalness:.85});
+const frameGroup=new THREE.Group();frameGroup.userData.key='frame';
+function bar(w,h){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,MODULE_T+0.06),frameMat);m.castShadow=true;m.userData.key='frame';return m;}
+const fTop=bar(MODULE_W,FRAME);fTop.position.y=MODULE_H/2-FRAME/2;
+const fBot=bar(MODULE_W,FRAME);fBot.position.y=-MODULE_H/2+FRAME/2;
+const fL=bar(FRAME,MODULE_H-2*FRAME);fL.position.x=-MODULE_W/2+FRAME/2;
+const fR=bar(FRAME,MODULE_H-2*FRAME);fR.position.x=MODULE_W/2-FRAME/2;
+[fTop,fBot,fL,fR].forEach(b=>frameGroup.add(b));
+pickables.push(fTop,fBot,fL,fR);
+
+// junction box (on back)
+const jboxMat=new THREE.MeshStandardMaterial({color:0x111418,roughness:.6,metalness:.2});
+const jbox=new THREE.Mesh(new THREE.BoxGeometry(0.9,0.5,0.22),jboxMat);
+jbox.userData.key='jbox';jbox.castShadow=true;
+const jboxGroup=new THREE.Group();jboxGroup.add(jbox);
+// two cables
+const cableMat=new THREE.MeshStandardMaterial({color:0x0a0a0a,roughness:.8});
+function cable(off,col){
+  const curve=new THREE.CatmullRomCurve3([
+    new THREE.Vector3(off,-0.1,0),new THREE.Vector3(off,-0.7,0.4),
+    new THREE.Vector3(off*1.6,-1.3,0.2),new THREE.Vector3(off*1.4,-1.9,0.5)
+  ]);
+  const g=new THREE.TubeGeometry(curve,24,0.05,8,false);
+  const m=new THREE.Mesh(g,new THREE.MeshStandardMaterial({color:col,roughness:.7}));
+  return m;
+}
+jboxGroup.add(cable(-0.25,0xff3b30)); // +
+jboxGroup.add(cable(0.25,0x222222));  // -
+pickables.push(jbox);
+
+/* assemble: stack along Z. Back (lowest z) -> front (highest z).
+   z order: back(0) evaB cells evaT glass(front) ; frame centred ; jbox behind back */
+const baseZ={back:-MODULE_T/2, evaB:-MODULE_T*0.18, cells:0, evaT:MODULE_T*0.18, glass:MODULE_T/2};
+layers.back.position.z=baseZ.back;
+layers.evaB.position.z=baseZ.evaB;
+layers.cells.position.z=baseZ.cells;
+layers.evaT.position.z=baseZ.evaT;
+layers.glass.position.z=baseZ.glass;
+jboxGroup.position.z=baseZ.back-0.16;
+[layers.back,layers.evaB,layers.cells,layers.evaT,layers.glass].forEach(m=>{m.castShadow=true;m.receiveShadow=true;moduleGroup.add(m);pickables.push(m);});
+moduleGroup.add(frameGroup);moduleGroup.add(jboxGroup);
+moduleGroup.rotation.x=-0.05;
+
+/* ====================== STATE + INTERACTION ============================= */
+let state={type:'mono',explode:0,spin:true,labels:false,testing:false};
+
+function applyType(t){
+  state.type=t;
+  const T=TYPES[t];
+  layers.cells.material.map=makeCellTexture(t);
+  layers.cells.material.color.set(0xffffff);
+  layers.cells.material.needsUpdate=true;
+  // backsheet colour: white for c-Si, dark for thin-film
+  layers.back.material.color.set(t==='thin'?0x15100d:0xf3f5f8);
+  // frame colour: black-ish for mono, silver otherwise
+  frameMat.color.set(t==='mono'?0x1a1d22:0xd8dde4);
+  // segs
+  document.querySelectorAll('#typeSegs .seg').forEach(s=>s.classList.toggle('on',s.dataset.type===t));
+  // spec card
+  document.getElementById('spType').textContent=T.name;
+  document.getElementById('spTag').textContent=T.tag;
+  const rows=T.rows.map(r=>`<div class="spec-row"><span class="k">${r[0]}</span><span class="v">${r[1]}</span></div>`).join('');
+  document.getElementById('spRows').innerHTML=rows;
+  document.getElementById('spEffV').textContent=T.effLabel;
+  document.getElementById('spEffBar').style.width=Math.round(T.eff/22*100)+'%';
+  updatePerf();
+}
+
+/* live performance: irradiance + temperature -> power output (per-type behaviour) */
+function updatePerf(){
+  const T=TYPES[state.type];
+  const irr=+document.getElementById('irrSlider').value;   // W/m2
+  const temp=+document.getElementById('tempSlider').value; // deg C
+  const frac=irr/1000;
+  const tFactor=1+T.gamma*(temp-25);
+  const pout=Math.max(0,T.pstc*frac*tFactor);
+  const effNow=Math.max(0,T.eff*tFactor);
+  document.getElementById('irrVal').textContent=irr+" W/m²";
+  document.getElementById('tempVal').textContent=temp+" °C";
+  document.getElementById('perfW').textContent=Math.round(pout)+" W";
+  document.getElementById('perfBar').style.width=Math.min(100,pout/420*100)+"%";
+  document.getElementById('perfEff').textContent=effNow.toFixed(1)+"%";
+  const lossPct=Math.round((1-tFactor)*100);
+  let note;
+  if(temp>25) note=`At ${temp} °C this panel loses ≈ ${lossPct}% vs STC (temp-coeff ${(T.gamma*100).toFixed(2)} %/°C).`;
+  else if(temp<25) note=`Cooler than STC — a small gain over the 25 °C rating.`;
+  else note=`At Standard Test Conditions (25 °C, 1000 W/m²).`;
+  document.getElementById('perfNote').textContent=note;
+  // reflect irradiance in the 3D scene
+  sun.intensity=0.5+1.3*frac;
+  cellMat.emissiveIntensity=frac*0.10;
+}
+
+/* explode positions: spread along Z */
+function setExplode(v){
+  state.explode=v; const f=v/100;
+  const SP=2.6; // max spread
+  layers.back.position.z = baseZ.back  - SP*f*1.0;
+  layers.evaB.position.z = baseZ.evaB  - SP*f*0.5;
+  layers.cells.position.z= baseZ.cells;
+  layers.evaT.position.z = baseZ.evaT  + SP*f*0.5;
+  layers.glass.position.z= baseZ.glass + SP*f*1.0;
+  jboxGroup.position.z   = (baseZ.back-0.16) - SP*f*1.4;
+  // frame opens slightly outward by scaling gap (fake): move bars out
+  const fo=FRAME/2 + 0.0; // frame stays; push frame back a touch
+  frameGroup.position.z = -SP*f*0.25;
+  document.getElementById('explodeSlider').value=v;
+  document.getElementById('explodeBtn').classList.toggle('on',v>2);
+}
+
+/* ---------- pointer / orbit ---------- */
+let drag=false,lastX,lastY,downX,downY,moved=false;
+const el=renderer.domElement;
+el.addEventListener('pointerdown',e=>{drag=true;moved=false;lastX=downX=e.clientX;lastY=downY=e.clientY;el.setPointerCapture(e.pointerId);});
+el.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const dx=e.clientX-lastX,dy=e.clientY-lastY;lastX=e.clientX;lastY=e.clientY;
+  if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>4)moved=true;
+  cam.theta-=dx*0.008;cam.phi=Math.max(0.25,Math.min(2.5,cam.phi-dy*0.006));
+});
+el.addEventListener('pointerup',e=>{
+  drag=false;
+  if(!moved)handlePick(e); // treat as click
+});
+el.addEventListener('wheel',e=>{e.preventDefault();cam.r=Math.max(5,Math.min(22,cam.r+e.deltaY*0.01));},{passive:false});
+
+function handlePick(e){
+  if(state.testing)return;
+  const r=el.getBoundingClientRect();
+  const mx=((e.clientX-r.left)/r.width)*2-1, my=-((e.clientY-r.top)/r.height)*2+1;
+  raycaster.setFromCamera({x:mx,y:my},camera);
+  const hits=raycaster.intersectObjects(pickables,false);
+  if(hits.length){
+    const key=hits[0].object.userData.key;
+    if(LAYER_INFO[key])showInfo(key);
+  } else hideInfo();
+}
+function showInfo(key){
+  const d=LAYER_INFO[key];if(!d)return;
+  document.getElementById('infoTitle').textContent=d[0];
+  document.getElementById('infoBody').textContent=d[1];
+  document.getElementById('info').style.display='block';
+}
+function hideInfo(){document.getElementById('info').style.display='none';}
+
+/* ====================== COMPONENT LABELS (projected) ==================== */
+const LABEL_KEYS=[['glass','Front glass'],['cells','Solar cells'],['back','Back-sheet'],
+  ['frame','Aluminium frame'],['jbox','Junction box']];
+const tagEls={};
+LABEL_KEYS.forEach(([k,txt])=>{
+  const d=document.createElement('div');d.className='tag dim';d.textContent=txt;
+  d.style.display='none';d.addEventListener('click',()=>showInfo(k));
+  document.body.appendChild(d);tagEls[k]=d;
+});
+function anchorFor(k){
+  if(k==='glass')return new THREE.Vector3(-(MODULE_W/2-0.4),MODULE_H/2-0.4,layers.glass.position.z);
+  if(k==='cells')return new THREE.Vector3(0,0.3,layers.cells.position.z);
+  if(k==='back') return new THREE.Vector3((MODULE_W/2-0.5),-(MODULE_H/2-0.6),layers.back.position.z);
+  if(k==='frame')return new THREE.Vector3(MODULE_W/2-FRAME/2,0,frameGroup.position.z);
+  if(k==='jbox') return new THREE.Vector3(0,-0.2,jboxGroup.position.z);
+}
+function updateLabels(){
+  const show=state.labels && !state.testing;
+  LABEL_KEYS.forEach(([k])=>{
+    const t=tagEls[k];if(!show){t.style.display='none';return;}
+    const p=anchorFor(k).clone();moduleGroup.localToWorld(p);p.project(camera);
+    if(p.z>1){t.style.display='none';return;}
+    t.style.display='block';
+    t.style.left=((p.x*0.5+0.5)*W)+'px';
+    t.style.top=((-p.y*0.5+0.5)*H)+'px';
+  });
+}
+
+/* ====================== KNOWLEDGE CHECK (SCORM) ======================== */
+const Q=[
+  {prompt:"This module has uniform black cells with chamfered corners and the highest efficiency. Which technology is it?",
+   ans:'mono',set:'mono'},
+  {prompt:"Blue, speckled square cells filling the whole module — and a lower price per panel. Which technology?",
+   ans:'poly',set:'poly'},
+  {prompt:"A continuous dark surface with no visible cell grid that performs best in high heat. Which technology?",
+   ans:'thin',set:'thin'}
+];
+const OPTLABEL={mono:'Monocrystalline',poly:'Polycrystalline',thin:'Thin-film'};
+let qi=0,score=0,answered=false;
+
+function startTest(){
+  state.testing=true;answered=false;qi=0;score=0;
+  state.labels=false;document.getElementById('labelBtn').classList.remove('on');
+  state.spin=false;document.getElementById('spinBtn').classList.remove('on');
+  hideInfo();
+  document.getElementById('tResult').style.display='none';
+  document.getElementById('tBody').style.display='block';
+  document.getElementById('test').style.display='block';
+  renderQ();
+}
+function renderQ(){
+  answered=false;const q=Q[qi];
+  applyType(q.set);                       // show the module being asked about
+  document.getElementById('tProg').textContent=`Question ${qi+1} / ${Q.length}`;
+  document.getElementById('tQ').textContent=q.prompt;
+  const opts=['mono','poly','thin'];
+  const box=document.getElementById('tOpts');box.innerHTML='';
+  opts.forEach(o=>{
+    const b=document.createElement('button');b.className='opt';b.textContent=OPTLABEL[o];
+    b.onclick=()=>pick(o,b);box.appendChild(b);
+  });
+  document.getElementById('tFb').textContent='';
+  document.getElementById('tFb').className='fb';
+  document.getElementById('tNext').style.display='none';
+  document.getElementById('tNext').textContent = qi<Q.length-1?'Next ▸':'See result ▸';
+}
+function pick(o,btn){
+  if(answered)return;answered=true;
+  const q=Q[qi];const correct=q.ans;
+  document.querySelectorAll('#tOpts .opt').forEach(b=>{
+    if(b.textContent===OPTLABEL[correct])b.classList.add('correct');
+    b.style.pointerEvents='none';
+  });
+  const fb=document.getElementById('tFb');
+  if(o===correct){score++;fb.textContent='✓ Correct — '+feedbackFor(correct);fb.className='fb ok';}
+  else{btn.classList.add('wrong');fb.textContent='✗ Not quite. '+feedbackFor(correct);fb.className='fb no';}
+  document.getElementById('tNext').style.display='inline-flex';
+}
+function feedbackFor(t){
+  if(t==='mono')return'Monocrystalline cells are cut from a single crystal — uniform black with clipped corners.';
+  if(t==='poly')return'Polycrystalline cells are cast from many crystals — blue and speckled, square edges.';
+  return'Thin-film has no discrete cells and the best high-temperature performance.';
+}
+document.getElementById('tNext').onclick=()=>{
+  if(qi<Q.length-1){qi++;renderQ();}else finishTest();
+};
+function finishTest(){
+  const pct=Math.round(score/Q.length*100);
+  document.getElementById('tBody').style.display='none';
+  document.getElementById('tResult').style.display='block';
+  document.getElementById('tScore').textContent=pct+'%';
+  const pass=pct>=67;
+  const v=document.getElementById('tVerdict');
+  v.textContent=pass?`Passed — ${score} of ${Q.length} correct. You can differentiate the panel types.`
+                     :`${score} of ${Q.length} correct. Review the three types and try again.`;
+  v.className='fb '+(pass?'ok':'no');
+  SCORM.complete(pct,pass);
+}
+document.getElementById('tClose').onclick=()=>{
+  state.testing=false;document.getElementById('test').style.display='none';
+  state.spin=true;document.getElementById('spinBtn').classList.add('on');
+};
+
+/* ---------------------- SCORM 1.2 wrapper ----------------------------- */
+const SCORM=(function(){
+  let api=null,ready=false;
+  function find(win){let n=0;try{while(win&&win.API==null&&win.parent&&win.parent!==win&&n<12){n++;win=win.parent;}}catch(e){return null;}return win?win.API:null;}
+  function init(){
+    api=find(window);
+    if(!api&&window.opener)api=find(window.opener);
+    if(api){try{api.LMSInitialize("");ready=true;
+      document.getElementById('scormDot').classList.add('live');
+      document.getElementById('scormTxt').textContent='Connected to LMS (SCORM 1.2)';
+    }catch(e){}}
+  }
+  function complete(pct,pass){
+    // Always notify a Storyline/host frame too (optional integration hook)
+    try{parent.postMessage({type:'PV_LAB_RESULT',score:pct,passed:pass},'*');}catch(e){}
+    if(!ready||!api)return;
+    try{
+      api.LMSSetValue("cmi.core.score.raw",String(pct));
+      api.LMSSetValue("cmi.core.score.min","0");
+      api.LMSSetValue("cmi.core.score.max","100");
+      api.LMSSetValue("cmi.core.lesson_status",pass?"passed":"failed");
+      api.LMSCommit("");
+    }catch(e){}
+  }
+  window.addEventListener('load',init);
+  window.addEventListener('unload',()=>{if(ready&&api){try{api.LMSFinish("");}catch(e){}}});
+  return {complete};
+})();
+
+/* ====================== UI WIRING ====================================== */
+document.getElementById('typeSegs').addEventListener('click',e=>{
+  const s=e.target.closest('.seg');if(!s)return;applyType(s.dataset.type);
+});
+document.getElementById('explodeSlider').addEventListener('input',e=>setExplode(+e.target.value));
+document.getElementById('explodeBtn').addEventListener('click',()=>{
+  setExplode(state.explode>2?0:100);
+});
+document.getElementById('spinBtn').addEventListener('click',e=>{
+  state.spin=!state.spin;e.currentTarget.classList.toggle('on',state.spin);
+});
+document.getElementById('labelBtn').addEventListener('click',e=>{
+  state.labels=!state.labels;e.currentTarget.classList.toggle('on',state.labels);
+  if(!state.labels)updateLabels();
+});
+document.getElementById('resetBtn').addEventListener('click',()=>{
+  cam={...camHome};setExplode(0);hideInfo();
+});
+document.getElementById('testBtn').addEventListener('click',startTest);
+document.getElementById('irrSlider').addEventListener('input',updatePerf);
+document.getElementById('tempSlider').addEventListener('input',updatePerf);
+
+/* ====================== RENDER LOOP ==================================== */
+function resize(){
+  W=app.clientWidth;H=app.clientHeight;
+  camera.aspect=W/H;camera.updateProjectionMatrix();renderer.setSize(W,H);
+}
+window.addEventListener('resize',resize);
+
+function animate(){
+  requestAnimationFrame(animate);
+  const dt=clock.getDelta();
+  if(state.spin && !drag)cam.theta+=dt*0.25;
+  // spherical -> cartesian
+  const r=cam.r,phi=cam.phi,th=cam.theta;
+  camera.position.set(
+    camTarget.x+r*Math.sin(phi)*Math.sin(th),
+    camTarget.y+r*Math.cos(phi),
+    camTarget.z+r*Math.sin(phi)*Math.cos(th)
+  );
+  camera.lookAt(camTarget);
+  updateLabels();
+  renderer.render(scene,camera);
+}
+
+/* ---- light / dark theme ---- */
+let darkMode=true;
+function makeLightBg(){
+  const c=document.createElement('canvas');c.width=4;c.height=512;
+  const cx=c.getContext('2d');const g=cx.createLinearGradient(0,0,0,512);
+  g.addColorStop(0,'#eef4fb');g.addColorStop(1,'#ccd8e7');
+  cx.fillStyle=g;cx.fillRect(0,0,4,512);
+  const t=new THREE.CanvasTexture(c);t.encoding=THREE.sRGBEncoding;return t;
+}
+function rebuildGrid(c1,c2,op){
+  if(grid){scene.remove(grid);grid.geometry.dispose();grid.material.dispose();}
+  grid=new THREE.GridHelper(40,40,c1,c2);grid.position.y=-3.09;
+  grid.material.opacity=op;grid.material.transparent=true;scene.add(grid);
+}
+function applyScene(dark){
+  if(dark){
+    scene.background=new THREE.Color(0x0a1626);
+    scene.fog=new THREE.Fog(0x0a1626,18,50);
+    ground.material.color.setHex(0x0f2034);
+    rebuildGrid(0x294f72,0x1b3550,0.55);
+    hemi.intensity=0.95;
+  } else {
+    scene.background=makeLightBg();
+    scene.fog=new THREE.Fog(0xd2dded,20,52);
+    ground.material.color.setHex(0xc7d4e3);
+    rebuildGrid(0x9fb3c8,0xbccadb,0.7);
+    hemi.intensity=1.05;
+  }
+  ground.material.needsUpdate=true;
+}
+function setTheme(dark){
+  darkMode=dark;
+  document.body.classList.toggle('dark',dark);
+  applyScene(dark);
+  document.getElementById('themeBtn').textContent = dark ? '☀ Light mode' : '🌙 Dark mode';
+  if(typeof updatePerf==='function') updatePerf();
+}
+document.getElementById('themeBtn').addEventListener('click',()=>setTheme(!darkMode));
+document.getElementById('introGo').addEventListener('click',()=>document.getElementById('intro').classList.add('hide'));
+
+/* ---- go ---- */
+applyType('mono');
+setTheme(true);          /* default: dark (best contrast) */
+setExplode(0);
+animate();
+setTimeout(()=>{document.getElementById('load').style.display='none';},450);
+</script>
+</body>
+</html>

@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<title>AR — Solar PV Module</title>
+<script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+<style>
+  body{margin:0;overflow:hidden;font-family:"Segoe UI",system-ui,Arial,sans-serif}
+  .ovl{position:fixed;top:0;left:0;right:0;padding:10px 14px;background:rgba(10,22,38,.82);color:#fff;
+    font-size:13px;z-index:10;text-align:center;line-height:1.4}
+  .ovl a{color:#FFB300;font-weight:700}
+  .nocam{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;
+    background:#0a1626;color:#cfe0f0;padding:30px;font-size:15px;z-index:5}
+</style>
+</head>
+<body>
+<div class="ovl">Point your camera at a <b>Hiro marker</b> to place the 3D solar panel in your space ·
+  <a href="https://raw.githubusercontent.com/AR-js-org/AR.js/master/data/images/hiro.png" target="_blank" rel="noopener">open marker</a>
+</div>
+<div class="nocam" id="nocam">Starting camera… allow camera access. AR works best on a phone over HTTPS.</div>
+<a-scene embedded vr-mode-ui="enabled:false"
+  arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix;"
+  renderer="antialias:true; alpha:true">
+  <a-marker preset="hiro" id="m">
+    <a-box position="0 0.03 0" rotation="-90 0 0" width="1.66" height="1.06" depth="0.03" color="#c7ced7"></a-box>
+    <a-box position="0 0.06 0" rotation="-90 0 0" width="1.5" height="0.95" depth="0.04" color="#0a1018"></a-box>
+    <a-text value="Solar PV module" position="0 0.55 0" rotation="-90 0 0" align="center" color="#FFB300" width="3"></a-text>
+  </a-marker>
+  <a-entity camera></a-entity>
+</a-scene>
+<script>
+  // hide the "starting camera" note once the scene renders
+  document.querySelector('a-scene').addEventListener('renderstart',()=>{var n=document.getElementById('nocam');if(n)n.style.display='none';});
+  setTimeout(()=>{var n=document.getElementById('nocam');if(n)n.style.display='none';},4000);
+</script>
+</body>
+</html>

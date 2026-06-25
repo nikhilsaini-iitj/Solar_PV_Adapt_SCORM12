@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e3f0ff"/>
+      <stop offset="40%" stop-color="#f7fbff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="sun" cx="80%" cy="15%" r="45%">
+      <stop offset="0%" stop-color="#fff7d6"/>
+      <stop offset="20%" stop-color="#ffdf80"/>
+      <stop offset="45%" stop-color="#ffb300"/>
+      <stop offset="70%" stop-color="#e98a00" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#e98a00" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="ray" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb300" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#ffb300" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1440" height="900" fill="url(#sky)"/>
+  <rect width="1440" height="900" fill="url(#sun)"/>
+  <g transform="translate(1080 80)">
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(0)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(45)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(90)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(135)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(180)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(225)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(270)"/>
+    <polygon points="0,0 120,360 -120,360" fill="url(#ray)" transform="rotate(315)"/>
+  </g>
+  <g opacity="0.04" fill="#0A5CD6">
+    <circle cx="200" cy="750" r="180"/>
+    <circle cx="400" cy="820" r="140"/>
+    <circle cx="600" cy="780" r="160"/>
+    <circle cx="820" cy="830" r="130"/>
+    <circle cx="1050" cy="790" r="150"/>
+    <circle cx="1280" cy="820" r="120"/>
+  </g>
+  <g transform="translate(0 720)">
+    <path d="M0,80 Q360,20 720,80 T1440,80 L1440,180 L0,180 Z" fill="#f6f8fb"/>
+    <path d="M0,100 Q360,40 720,100 T1440,100 L1440,180 L0,180 Z" fill="#eef2f7"/>
+  </g>
+</svg>

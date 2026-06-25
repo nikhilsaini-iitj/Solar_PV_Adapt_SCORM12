@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Interactive Component Lab</title>
+<style>
+  :root{--primary:#0A5CD6;--primary-d:#0746a8;--primarybg:#eef4fe;--ink:#191c1f;--body:#3c4450;
+    --muted:#6a727c;--line:#e5e8ee;--bg:#fff;--bg2:#f6f8fb;--green:#0f6b3d;--greenbg:#e8f6ee;
+    --amber:#E8920B;--red:#c0392b;--radius:14px;}
+  *{box-sizing:border-box}
+  html,body{margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+    color:var(--ink);background:var(--bg2)}
+  .wrap{max-width:920px;margin:0 auto;padding:18px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:999px;padding:9px 16px;font-weight:700;
+    font-size:13.5px;cursor:pointer;color:var(--muted)}
+  .tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .panel{display:none;animation:f .25s ease}.panel.on{display:block}
+  @keyframes f{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:20px;
+    box-shadow:0 1px 2px rgba(16,24,40,.05),0 8px 24px rgba(16,24,40,.05)}
+  h2{margin:0 0 4px;font-size:20px}
+  .sub{color:var(--muted);font-size:14px;margin:0 0 16px}
+  label{font-size:13px;color:var(--muted);font-weight:600}
+  .row{display:flex;align-items:center;gap:14px;margin:12px 0}
+  .row .val{margin-left:auto;font-weight:800;color:var(--ink)}
+  input[type=range]{flex:1;-webkit-appearance:none;height:6px;border-radius:4px;background:var(--line);outline:none}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--primary);cursor:pointer}
+  select{padding:9px 12px;border:1px solid var(--line);border-radius:9px;font-size:14px;font-weight:600;background:#fff}
+  .seg{display:inline-flex;gap:6px;flex-wrap:wrap}
+  .seg .o{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 14px;font-weight:700;font-size:13px;cursor:pointer;color:var(--muted)}
+  .seg .o.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .stat{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:16px}
+  .stat .b{background:var(--bg2);border:1px solid var(--line);border-radius:11px;padding:14px;text-align:center}
+  .stat .b .n{font-size:24px;font-weight:800;color:var(--primary)}
+  .stat .b .l{font-size:12px;color:var(--muted);margin-top:3px}
+  .verdict{margin-top:16px;padding:13px 15px;border-radius:11px;font-weight:700;font-size:14.5px}
+  .verdict.ok{background:var(--greenbg);color:var(--green);border:1px solid #bfe6cd}
+  .verdict.no{background:#fdecea;color:var(--red);border:1px solid #f5c6c0}
+  /* build module */
+  .stack{max-width:430px;margin:0 auto}
+  .lay{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;padding:11px 14px;margin:8px 0;background:#fff}
+  .lay .nm{font-weight:700;font-size:14px}
+  .lay .sw{width:34px;height:20px;border-radius:4px;flex:none}
+  .lay .ar{margin-left:auto;display:flex;gap:6px}
+  .lay button{border:1px solid var(--line);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;font-size:15px}
+  .lay.correct{border-color:var(--green);background:var(--greenbg)}
+  .btn{border:none;background:var(--primary);color:#fff;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  canvas{width:100%;height:230px;display:block}
+  .legend{display:flex;gap:16px;justify-content:center;font-size:12.5px;color:var(--muted);margin-top:8px}
+  .legend i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:5px;vertical-align:middle}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="tabs" id="tabs"></div>
+
+  <!-- 1 BUILD THE MODULE -->
+  <section class="panel on" id="p0"><div class="card">
+    <h2>Build the module</h2>
+    <p class="sub">Put the laminate layers in the right order, top (sun side) to bottom. Use the arrows, then check.</p>
+    <div class="stack" id="stack"></div>
+    <div style="text-align:center;margin-top:14px">
+      <button class="btn" id="checkBuild">Check order</button>
+      <button class="btn sec" id="shuffleBuild">Shuffle</button>
+    </div>
+    <div class="verdict" id="buildVerdict" style="display:none"></div>
+  </div></section>
+
+  <!-- 2 SIZING SIMULATOR -->
+  <section class="panel" id="p1"><div class="card">
+    <h2>System sizing simulator</h2>
+    <p class="sub">Choose a target size, your roof area and a panel type — see how many panels fit.</p>
+    <div class="row"><label>Target system size</label><input type="range" id="kw" min="1" max="10" step="0.5" value="3"><span class="val" id="kwV">3.0 kW</span></div>
+    <div class="row"><label>Usable roof area</label><input type="range" id="area" min="5" max="60" step="1" value="18"><span class="val" id="areaV">18 m²</span></div>
+    <div class="row"><label>Panel technology</label><div class="seg" id="sizeType" style="margin-left:auto">
+      <span class="o on" data-t="mono">Mono</span><span class="o" data-t="poly">Poly</span><span class="o" data-t="thin">Thin-film</span></div></div>
+    <div class="stat">
+      <div class="b"><div class="n" id="sPanels">—</div><div class="l">panels needed</div></div>
+      <div class="b"><div class="n" id="sArea">—</div><div class="l">roof area used</div></div>
+      <div class="b"><div class="n" id="sPower">—</div><div class="l">array power</div></div>
+    </div>
+    <div class="verdict" id="sizeVerdict"></div>
+  </div></section>
+
+  <!-- 3 TEMPERATURE & OUTPUT -->
+  <section class="panel" id="p2"><div class="card">
+    <h2>Temperature &amp; output</h2>
+    <p class="sub">Drag the temperature — see how each technology loses power as it heats up (temperature coefficient).</p>
+    <div class="row"><label>Cell temperature</label><input type="range" id="temp" min="10" max="70" step="1" value="25"><span class="val" id="tempV">25 °C</span></div>
+    <canvas id="chart" width="860" height="230"></canvas>
+    <div class="legend"><span><i style="background:#0a1018"></i>Mono −0.34%/°C</span><span><i style="background:#16357e"></i>Poly −0.41%/°C</span><span><i style="background:#7a4a2a"></i>Thin −0.25%/°C</span></div>
+  </div></section>
+
+  <!-- 4 CHOOSE THE RIGHT PANEL -->
+  <section class="panel" id="p3"><div class="card">
+    <h2>Choose the right panel</h2>
+    <p class="sub">Set the site conditions and get a recommendation with the reasoning.</p>
+    <div class="row"><label>Roof space</label><div class="seg" id="cSpace" style="margin-left:auto"><span class="o on" data-v="tight">Tight</span><span class="o" data-v="ample">Ample</span></div></div>
+    <div class="row"><label>Budget</label><div class="seg" id="cBudget" style="margin-left:auto"><span class="o on" data-v="low">Low</span><span class="o" data-v="flex">Flexible</span></div></div>
+    <div class="row"><label>Climate</label><div class="seg" id="cClimate" style="margin-left:auto"><span class="o on" data-v="hot">Very hot</span><span class="o" data-v="mod">Moderate</span></div></div>
+    <div class="verdict ok" id="recVerdict"></div>
+  </div></section>
+</div>
+
+<script>
+/* tabs */
+const TABS=["Build the module","Sizing simulator","Temperature & output","Choose the panel"];
+const tabsEl=document.getElementById('tabs');
+TABS.forEach((t,i)=>{const b=document.createElement('div');b.className='tab'+(i===0?' on':'');b.textContent=t;
+  b.onclick=()=>{document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));b.classList.add('on');
+    document.querySelectorAll('.panel').forEach((p,k)=>p.classList.toggle('on',k===i));};tabsEl.appendChild(b);});
+
+/* ---- 1 build the module ---- */
+const ORDER=[["Tempered glass","#bfe6ff"],["EVA (front)","#ffe7a8"],["Solar cells","#0a1018"],
+             ["EVA (back)","#ffe7a8"],["Back-sheet","#f3f5f8"]];
+let build=[0,1,2,3,4];
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[a[i],a[j]]=[a[j],a[i]];}}
+function renderBuild(){
+  const s=document.getElementById('stack');s.innerHTML='';
+  build.forEach((idx,pos)=>{
+    const L=ORDER[idx];const d=document.createElement('div');d.className='lay';
+    d.innerHTML=`<span class="sw" style="background:${L[1]};border:1px solid #c9d3e2"></span><span class="nm">${L[0]}</span>
+      <span class="ar"><button data-up="${pos}">▲</button><button data-dn="${pos}">▼</button></span>`;
+    s.appendChild(d);
+  });
+  s.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{const p=+b.dataset.up;if(p>0){[build[p-1],build[p]]=[build[p],build[p-1]];renderBuild();}});
+  s.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>{const p=+b.dataset.dn;if(p<build.length-1){[build[p+1],build[p]]=[build[p],build[p+1]];renderBuild();}});
+  document.getElementById('buildVerdict').style.display='none';
+}
+document.getElementById('checkBuild').onclick=()=>{
+  const ok=build.every((v,i)=>v===i);const v=document.getElementById('buildVerdict');
+  v.style.display='block';v.className='verdict '+(ok?'ok':'no');
+  v.textContent=ok?'✓ Correct — glass on top, cells sealed in EVA, back-sheet at the base.':'Not yet. The sun-facing glass goes on top and the back-sheet at the bottom, with the cells sealed between the two EVA layers.';
+  if(ok)document.querySelectorAll('#stack .lay').forEach(l=>l.classList.add('correct'));
+};
+document.getElementById('shuffleBuild').onclick=()=>{do{shuffle(build);}while(build.every((v,i)=>v===i));renderBuild();};
+shuffle(build);renderBuild();
+
+/* ---- 2 sizing simulator ---- */
+const SPEC={mono:{w:400,a:1.95,n:"Monocrystalline"},poly:{w:330,a:1.94,n:"Polycrystalline"},thin:{w:115,a:1.40,n:"Thin-film"}};
+let sizeT='mono';
+function sizeCalc(){
+  const kw=+document.getElementById('kw').value, roof=+document.getElementById('area').value, S=SPEC[sizeT];
+  document.getElementById('kwV').textContent=kw.toFixed(1)+' kW';
+  document.getElementById('areaV').textContent=roof+' m²';
+  const panels=Math.ceil(kw*1000/S.w), area=panels*S.a, power=panels*S.w/1000;
+  document.getElementById('sPanels').textContent=panels;
+  document.getElementById('sArea').textContent=area.toFixed(1)+' m²';
+  document.getElementById('sPower').textContent=power.toFixed(2)+' kW';
+  const v=document.getElementById('sizeVerdict'), fits=area<=roof;
+  v.className='verdict '+(fits?'ok':'no');
+  v.textContent=fits?`✓ ${panels} ${S.n} panels fit in ${area.toFixed(1)} m² of your ${roof} m² roof.`
+                    :`✗ ${panels} ${S.n} panels need ${area.toFixed(1)} m² — more than your ${roof} m² roof. Try a higher-efficiency type or a smaller target.`;
+}
+document.getElementById('kw').oninput=sizeCalc; document.getElementById('area').oninput=sizeCalc;
+document.getElementById('sizeType').onclick=e=>{const o=e.target.closest('.o');if(!o)return;
+  document.querySelectorAll('#sizeType .o').forEach(x=>x.classList.remove('on'));o.classList.add('on');sizeT=o.dataset.t;sizeCalc();};
+sizeCalc();
+
+/* ---- 3 temperature & output chart (canvas) ---- */
+const GAMMA={mono:-0.0034,poly:-0.0041,thin:-0.0025};const COL={mono:'#0a1018',poly:'#16357e',thin:'#7a4a2a'};
+const cv=document.getElementById('chart'),cx=cv.getContext('2d');
+function drawChart(){
+  const T=+document.getElementById('temp').value;document.getElementById('tempV').textContent=T+' °C';
+  const W=cv.width,H=cv.height,pad=40,base=H-30;cx.clearRect(0,0,W,H);
+  // axes
+  cx.strokeStyle='#e5e8ee';cx.lineWidth=1;
+  for(let p=0;p<=100;p+=25){const y=base-(base-20)*p/100;cx.beginPath();cx.moveTo(pad,y);cx.lineTo(W-10,y);cx.stroke();
+    cx.fillStyle='#9aa3ad';cx.font='11px Inter,Arial';cx.fillText(p+'%',6,y+4);}
+  const types=['mono','poly','thin'],labels=['Mono','Poly','Thin'];
+  const bw=90,gap=((W-pad-20)-types.length*bw)/(types.length+1);
+  types.forEach((t,i)=>{
+    const out=Math.max(0,(1+GAMMA[t]*(T-25))*100);
+    const x=pad+gap+i*(bw+gap),h=(base-20)*out/100,y=base-h;
+    cx.fillStyle=COL[t];cx.fillRect(x,y,bw,h);
+    cx.fillStyle='#191c1f';cx.font='bold 15px Inter,Arial';cx.textAlign='center';
+    cx.fillText(out.toFixed(1)+'%',x+bw/2,y-8);
+    cx.fillStyle='#6a727c';cx.font='12px Inter,Arial';cx.fillText(labels[i],x+bw/2,base+18);
+    cx.textAlign='left';
+  });
+}
+document.getElementById('temp').oninput=drawChart;drawChart();
+
+/* ---- 4 choose the right panel ---- */
+const choice={space:'tight',budget:'low',climate:'hot'};
+function bindSeg(id,key){document.getElementById(id).onclick=e=>{const o=e.target.closest('.o');if(!o)return;
+  document.querySelectorAll('#'+id+' .o').forEach(x=>x.classList.remove('on'));o.classList.add('on');choice[key]=o.dataset.v;recommend();};}
+bindSeg('cSpace','space');bindSeg('cBudget','budget');bindSeg('cClimate','climate');
+function recommend(){
+  let pick,why;
+  if(choice.space==='tight'){pick='Monocrystalline';why='space is tight, so the most efficient panel gives the most power per square metre.';}
+  else if(choice.climate==='hot' && choice.budget==='flex'){pick='Thin-film';why='space is ample and the climate is very hot — thin-film loses the least power in heat.';}
+  else if(choice.budget==='low'){pick='Polycrystalline';why='budget leads and space is available, so poly gives the lowest cost per watt.';}
+  else {pick='Monocrystalline';why='it balances efficiency and long-term value for these conditions.';}
+  const v=document.getElementById('recVerdict');v.className='verdict ok';
+  v.innerHTML=`Recommended: <b>${pick}</b> — ${why}`;
+}
+recommend();
+</script>
+</body>
+</html>

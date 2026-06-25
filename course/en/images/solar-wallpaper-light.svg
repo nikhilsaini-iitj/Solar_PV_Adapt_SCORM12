@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="lightSky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8f4fc"/>
+      <stop offset="40%" stop-color="#f5faff"/>
+      <stop offset="100%" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="sunLight" cx="82%" cy="15%" r="40%">
+      <stop offset="0%" stop-color="#fff7d6"/>
+      <stop offset="20%" stop-color="#ffdf80" stop-opacity="0.5"/>
+      <stop offset="45%" stop-color="#ffb300" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#ffb300" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="lightRay" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffb300" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#ffb300" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="lightPanel" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#e8f0f7"/>
+      <stop offset="100%" stop-color="#d4e3f0"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="1920" height="1080" fill="url(#lightSky)"/>
+  <rect width="1920" height="1080" fill="url(#sunLight)"/>
+
+  <g transform="translate(1575 162)" opacity="0.5">
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(0)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(36)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(72)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(108)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(144)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(180)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(216)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(252)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(288)"/>
+    <polygon points="0,0 120,440 -120,440" fill="url(#lightRay)" transform="rotate(324)"/>
+  </g>
+
+  <g opacity="0.12" transform="translate(0 760)">
+    <path d="M-20,200 L240,100 L500,200 Z" fill="#c8dae8"/>
+    <path d="M420,200 L680,95 L940,200 Z" fill="#c8dae8"/>
+    <path d="M860,200 L1140,90 L1420,200 Z" fill="#c8dae8"/>
+    <path d="M1320,200 L1600,100 L1880,200 Z" fill="#c8dae8"/>
+  </g>
+
+  <g transform="translate(260 820)" opacity="0.2">
+    <g transform="translate(0 0)">
+      <path d="M0,140 L180,70 L360,140 L180,210 Z" fill="url(#lightPanel)" stroke="#a8c4d9" stroke-width="1"/>
+      <rect x="170" y="200" width="20" height="40" fill="#a8c4d9"/>
+    </g>
+    <g transform="translate(340 -35)">
+      <path d="M0,140 L180,70 L360,140 L180,210 Z" fill="url(#lightPanel)" stroke="#a8c4d9" stroke-width="1"/>
+      <rect x="170" y="200" width="20" height="40" fill="#a8c4d9"/>
+    </g>
+    <g transform="translate(680 0)">
+      <path d="M0,140 L180,70 L360,140 L180,210 Z" fill="url(#lightPanel)" stroke="#a8c4d9" stroke-width="1"/>
+      <rect x="170" y="200" width="20" height="40" fill="#a8c4d9"/>
+    </g>
+  </g>
+
+  <g opacity="0.06" stroke="#0A5CD6" stroke-width="0.5" fill="none">
+    <line x1="0" y1="550" x2="1920" y2="550"/>
+    <line x1="0" y1="650" x2="1920" y2="650"/>
+    <line x1="0" y1="750" x2="1920" y2="750"/>
+    <line x1="240" y1="0" x2="240" y2="1080"/>
+    <line x1="640" y1="0" x2="640" y2="1080"/>
+    <line x1="1040" y1="0" x2="1040" y2="1080"/>
+    <line x1="1440" y1="0" x2="1440" y2="1080"/>
+    <line x1="1840" y1="0" x2="1840" y2="1080"/>
+  </g>
+
+  <rect y="920" width="1920" height="160" fill="#ffffff" opacity="0.6"/>
+</svg>
