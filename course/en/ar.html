@@ -65,18 +65,18 @@
     justify-content: center;
     white-space: nowrap;
   }
-  .ar-btn, #direct-usdz, #force-usdz {
+  .ar-btn, #force-usdz {
     bottom: 28px;
     background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
     color: #0b1622;
     text-decoration: none;
   }
-  .ar-btn img, #direct-usdz img, #force-usdz img {
+  .ar-btn img, #force-usdz img {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 1px;
-    height: 1px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
     opacity: 0;
     pointer-events: none;
   }
@@ -129,6 +129,31 @@
     border-radius: 10px;
     font-size: 12px;
     text-align: center;
+  }
+  .iframe-banner {
+    position: absolute;
+    top: 48px;
+    left: 0;
+    right: 0;
+    z-index: 35;
+    background: #b00020;
+    color: #fff;
+    padding: 10px 14px;
+    text-align: center;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .iframe-banner a {
+    background: #F2CB73;
+    color: #0b1622;
+    padding: 6px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 700;
   }
   #xr-overlay {
     position: absolute;
@@ -202,6 +227,11 @@
   3D solar panel preview. Tap <b>View in AR</b> to place it in your space.
 </div>
 
+<div id="iframe-banner" class="iframe-banner" style="display:none;">
+  This AR page is loaded inside the course. To use AR on iPhone, open it directly in Safari.
+  <a id="iframe-open" href="panel.usdz" rel="ar" target="_blank">⛶ Open AR in Safari</a>
+</div>
+
 <!--
   AR delivery strategy:
   - iOS: direct AR Quick Look link to panel.usdz (Apple controls placement UX).
@@ -254,8 +284,8 @@
 </div>
 
 <!-- iOS AR Quick Look direct link (manual placement). Apple requires an img child. -->
-<a id="ios-ar" href="panel.usdz" rel="ar" target="_top" class="ar-btn" style="display:none;">
-  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" />
+<a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn" style="display:none;">
+  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;pointer-events:none;" />
   <span class="ar-btn-text">⛶ View in AR</span>
 </a>
 
@@ -269,18 +299,12 @@
   Manual AR
 </button>
 
-<!-- Generic launch AR button: shown if JS hasn't detected platform or model-viewer AR is available -->
+<!-- Generic launch AR button: shown if JS hasn't detected platform -->
 <button id="launch-ar" class="ar-btn" onclick="startGenericAR()">
   ⛶ Launch AR
 </button>
 
-<!-- Always-visible direct USDZ link for iOS. Hidden until JS confirms iOS. -->
-<a id="direct-usdz" class="ar-btn" href="panel.usdz" rel="ar" target="_top" style="display:none;">
-  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" />
-  <span class="ar-btn-text">⛶ View in AR</span>
-</a>
-
-<!-- Fallback direct USDZ button in case rel=ar link is blocked -->
+<!-- Fallback direct USDZ button (no rel=ar) -->
 <button id="force-usdz" class="ar-btn" style="display:none;" onclick="forceUSDZ()">
   ⛶ Open AR model
 </button>
@@ -301,12 +325,12 @@
 
   const viewer = document.getElementById('viewer');
   const iosBtn = document.getElementById('ios-ar');
-  const directBtn = document.getElementById('direct-usdz');
   const autoBtn = document.getElementById('auto-ar');
   const androidBtn = document.getElementById('android-ar');
   const launchBtn = document.getElementById('launch-ar');
-  const directBtn = document.getElementById('direct-usdz');
   const forceBtn = document.getElementById('force-usdz');
+  const iframeBanner = document.getElementById('iframe-banner');
+  const iframeOpen = document.getElementById('iframe-open');
   const tips = document.getElementById('tips');
   const errorBox = document.getElementById('error');
   const fallback = document.getElementById('fallback');
@@ -320,6 +344,9 @@
   const wallMode = document.getElementById('wallMode');
   const silhouetteBtn = document.getElementById('silhouetteBtn');
   const shadowBtn = document.getElementById('shadowBtn');
+
+  // Detect if page is inside the Adapt iframe and show breakout banner
+  const inIframe = window.self !== window.top;
 
   const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
   const platform = (navigator.platform || '').toLowerCase();
@@ -367,14 +394,19 @@
     }
   }
 
-  // iOS: use direct AR Quick Look link (most reliable)
+  // iOS: show native AR Quick Look link. If loaded in iframe, also show breakout banner.
   if (isIOS) {
     document.body.classList.add('ios');
-    iosBtn.style.display = 'none';
+    iosBtn.style.display = 'flex';
     launchBtn.style.display = 'none';
-    // Always show the direct USDZ button; fallback button only if Quick Look link is blocked
-    directBtn.style.display = 'flex';
     tips.innerHTML = 'Tap <b>View in AR</b> to place the panel on a floor or wall.<br>Drag to reposition; pinch to resize.';
+    if (inIframe) {
+      iframeBanner.style.display = 'flex';
+      // Point breakout link to the full HTTPS URL so Safari opens it
+      iframeOpen.href = 'https://nikhilsaini-iitj.github.io/Solar_PV_Adapt_SCORM12/course/en/panel.usdz';
+    }
+    // Some WKWebViews block rel=ar; offer a plain fallback after a short delay
+    setTimeout(() => { if (!supportsQuickLook()) forceBtn.style.display = 'flex'; }, 100);
   } else if (isAndroid) {
     document.body.classList.add('android');
     autoBtn.style.display = 'flex';
