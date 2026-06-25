@@ -37,10 +37,7 @@
       display: flex;
       flex-direction: column;
     }
-    header {
-      text-align: center;
-      margin-bottom: 16px;
-    }
+    header { text-align: center; margin-bottom: 16px; }
     h1 {
       font-size: clamp(1.2rem, 3vw, 1.8rem);
       font-weight: 800;
@@ -60,11 +57,8 @@
       min-height: 460px;
       flex: 1;
     }
-    .stage.night {
-      background: linear-gradient(180deg, #02050a 0%, #0a1020 50%, #0d1525 100%);
-    }
+    .stage.night { background: linear-gradient(180deg, #02050a 0%, #0a1020 50%, #0d1525 100%); }
 
-    /* Scene background */
     .sky { position: absolute; inset: 0; pointer-events: none; }
     .sun {
       position: absolute;
@@ -77,10 +71,7 @@
       box-shadow: 0 0 40px 20px rgba(245, 200, 66, 0.35);
       transition: all 0.8s ease;
     }
-    .stage.night .sun {
-      opacity: 0.15;
-      transform: translateY(80px) scale(0.7);
-    }
+    .stage.night .sun { opacity: 0.15; transform: translateY(80px) scale(0.7); }
     .moon {
       position: absolute;
       top: 12%;
@@ -94,15 +85,9 @@
       transition: opacity 0.8s ease;
     }
     .stage.night .moon { opacity: 1; }
-    .stars {
-      position: absolute;
-      inset: 0;
-      opacity: 0;
-      transition: opacity 0.8s ease;
-    }
+    .stars { position: absolute; inset: 0; opacity: 0; transition: opacity 0.8s ease; }
     .stage.night .stars { opacity: 0.6; }
 
-    /* Rooftop ground */
     .roof {
       position: absolute;
       bottom: 0;
@@ -123,22 +108,21 @@
       pointer-events: none;
     }
 
-    /* Interactive components */
     .component {
       position: absolute;
       cursor: pointer;
-      transition: transform 0.2s ease, filter 0.2s ease;
-      z-index: 2;
+      transition: transform 0.2s ease, filter 0.2s ease, box-shadow 0.2s ease;
+      z-index: 5;
     }
-    .component:hover { transform: scale(1.04); filter: drop-shadow(0 0 12px rgba(245, 200, 66, 0.4)); }
-    .component.active { filter: drop-shadow(0 0 18px rgba(245, 200, 66, 0.7)); }
+    .component:hover { transform: scale(1.03); filter: drop-shadow(0 0 12px rgba(245, 200, 66, 0.5)); }
+    .component.active { filter: drop-shadow(0 0 22px rgba(245, 200, 66, 0.9)); }
 
-    /* Solar array */
     .array-wrap {
       left: 8%;
       bottom: 32%;
       width: 34%;
       perspective: 700px;
+      padding: 10px;
     }
     .array {
       transform: rotateX(28deg) rotateY(-3deg);
@@ -158,6 +142,7 @@
       border-radius: 2px;
       position: relative;
       overflow: hidden;
+      pointer-events: none;
     }
     .panel::after {
       content: '';
@@ -168,7 +153,6 @@
       background-size: 33% 25%;
     }
 
-    /* Charge controller */
     .controller {
       left: 50%;
       bottom: 42%;
@@ -186,7 +170,7 @@
       box-shadow: 0 0 25px rgba(14, 165, 233, 0.25);
     }
     .led-row { display: flex; gap: 6px; }
-    .led { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px; }
+    .led { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px; pointer-events: none; }
     .led.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
     .led.amber { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
     .lcd {
@@ -200,14 +184,15 @@
       font-size: 9px;
       color: var(--green);
       line-height: 1.4;
+      pointer-events: none;
     }
     .controller-label {
       font-size: 8px;
       color: rgba(255, 255, 255, 0.4);
       letter-spacing: 1px;
+      pointer-events: none;
     }
 
-    /* Battery bank */
     .battery-bank {
       right: 8%;
       bottom: 34%;
@@ -215,6 +200,7 @@
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 8px;
+      padding: 6px;
     }
     .battery {
       height: 76px;
@@ -228,6 +214,7 @@
       padding-bottom: 8px;
       position: relative;
       box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+      pointer-events: none;
     }
     .battery::before {
       content: '';
@@ -243,7 +230,6 @@
     .battery-cap { font-size: 10px; color: var(--gold); font-weight: 700; }
     .battery-volt { font-size: 8px; color: var(--muted); }
 
-    /* Inverter */
     .inverter {
       right: 30%;
       bottom: 14%;
@@ -259,10 +245,9 @@
       padding: 6px;
       box-shadow: 0 0 18px rgba(168, 85, 247, 0.2);
     }
-    .inverter-icon { font-size: 24px; color: var(--purple); }
-    .inverter-label { font-size: 8px; color: #c084fc; text-align: center; margin-top: 4px; }
+    .inverter-icon { font-size: 24px; color: var(--purple); pointer-events: none; }
+    .inverter-label { font-size: 8px; color: #c084fc; text-align: center; margin-top: 4px; pointer-events: none; }
 
-    /* Distribution board */
     .db {
       left: 14%;
       bottom: 14%;
@@ -276,9 +261,8 @@
       justify-content: center;
       padding: 6px;
     }
-    .db-label { font-size: 9px; color: #e5e7eb; text-align: center; font-weight: 700; }
+    .db-label { font-size: 9px; color: #e5e7eb; text-align: center; font-weight: 700; pointer-events: none; }
 
-    /* Loads */
     .loads {
       left: 5%;
       bottom: 5%;
@@ -286,6 +270,7 @@
       gap: 10px;
       flex-wrap: wrap;
       max-width: 42%;
+      pointer-events: none;
     }
     .load {
       width: 46px;
@@ -302,26 +287,13 @@
     .load:nth-child(3) { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.3); }
     .load:nth-child(4) { background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.3); }
 
-    /* SVG wires + particles */
     .wires {
       position: absolute;
       inset: 0;
       pointer-events: none;
-      z-index: 1;
-    }
-    .particle {
-      offset-path: path('M0 0');
-      offset-rotate: 0deg;
-      animation: move 2.5s linear infinite;
-    }
-    @keyframes move {
-      0% { offset-distance: 0%; opacity: 0; }
-      10% { opacity: 1; }
-      90% { opacity: 1; }
-      100% { offset-distance: 100%; opacity: 0; }
+      z-index: 2;
     }
 
-    /* Labels */
     .comp-label {
       position: absolute;
       background: rgba(0, 0, 0, 0.75);
@@ -333,10 +305,9 @@
       font-weight: 700;
       pointer-events: none;
       white-space: nowrap;
-      z-index: 3;
+      z-index: 6;
     }
 
-    /* Info panel */
     .info-panel {
       background: var(--card);
       border: 1px solid var(--border);
@@ -370,7 +341,6 @@
     }
     .stat strong { color: var(--gold); }
 
-    /* Controls */
     .controls {
       display: flex;
       justify-content: center;
@@ -394,6 +364,9 @@
     }
     .btn:hover { border-color: var(--gold); color: var(--gold); }
     .btn.active { background: rgba(245, 200, 66, 0.15); border-color: var(--gold); color: var(--gold); }
+
+    @keyframes dashMove { to { stroke-dashoffset: -52; } }
+    @keyframes dashReverse { to { stroke-dashoffset: 52; } }
 
     @media (max-width: 720px) {
       .stage { min-height: 380px; }
@@ -448,7 +421,6 @@
         <line x1="90%" y1="0" x2="90%" y2="100%" stroke="#1a1008" stroke-width="1"/>
       </svg>
 
-      <!-- SVG wires overlay -->
       <svg class="wires" id="wires" width="100%" height="100%">
         <defs>
           <marker id="arrowGold" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
@@ -563,8 +535,10 @@
 
     function renderInfo(id) {
       const c = components[id];
+      if (!c) return;
       document.querySelectorAll('.component').forEach(el => el.classList.remove('active'));
-      document.querySelector(`.component[data-id="${id}"]`).classList.add('active');
+      const active = document.querySelector(`.component[data-id="${id}"]`);
+      if (active) active.classList.add('active');
       infoPanel.innerHTML = `
         <h2>${c.title}</h2>
         <p>${c.body}</p>
@@ -573,12 +547,24 @@
     }
 
     document.querySelectorAll('.component').forEach(el => {
-      el.addEventListener('click', () => renderInfo(el.dataset.id));
-      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') renderInfo(el.dataset.id); });
+      el.addEventListener('click', e => {
+        e.stopPropagation();
+        e.preventDefault();
+        renderInfo(el.dataset.id);
+      });
+      el.addEventListener('keydown', e => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          renderInfo(el.dataset.id);
+        }
+      });
     });
 
     function drawWires() {
-      wiresSvg.innerHTML = wiresSvg.querySelector('defs').outerHTML;
+      const defs = wiresSvg.querySelector('defs');
+      wiresSvg.innerHTML = '';
+      wiresSvg.appendChild(defs);
+
       const s = stage.getBoundingClientRect();
       const pts = {};
       document.querySelectorAll('.component').forEach(el => {
@@ -593,7 +579,7 @@
         };
       });
 
-      function path(d, color, marker, id) {
+      function createPath(d, color, marker, id) {
         const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         p.setAttribute('d', d);
         p.setAttribute('stroke', color);
@@ -604,7 +590,6 @@
         p.setAttribute('opacity', '0.75');
         wiresSvg.appendChild(p);
 
-        // animated dashes
         const dash = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         dash.setAttribute('d', d);
         dash.setAttribute('stroke', color);
@@ -613,30 +598,22 @@
         dash.setAttribute('stroke-linecap', 'round');
         dash.setAttribute('stroke-dasharray', '8 18');
         dash.setAttribute('opacity', '0.5');
-        dash.style.animation = isNight && id === 'inv-batt'
+        dash.style.animation = isNight && id === 'batt-inv'
           ? 'dashReverse 2s linear infinite'
           : 'dashMove 2s linear infinite';
         wiresSvg.appendChild(dash);
       }
 
-      // Array -> Controller (gold)
-      path(`M${pts.array.right} ${pts.array.y} L${pts.controller.left} ${pts.controller.y}`, '#f5c842', 'arrowGold', 'arr-ctrl');
-      // Controller -> Battery (green)
-      path(`M${pts.controller.right} ${pts.controller.y} L${pts.battery.left} ${pts.battery.y}`, '#22c55e', 'arrowGreen', 'ctrl-batt');
-      // Battery -> Inverter (orange)
-      path(`M${pts.battery.x} ${pts.battery.bottom} L${pts.inverter.x} ${pts.inverter.top}`, '#f97316', 'arrowOrange', 'batt-inv');
-      // Inverter -> DB (red)
-      path(`M${pts.inverter.left} ${pts.inverter.y} L${pts.db.right} ${pts.db.y}`, '#ef4444', 'arrowRed', 'inv-db');
-      // DB -> Loads (white)
-      path(`M${pts.db.left} ${pts.db.y} L${pts.db.left - 30} ${pts.db.y}`, '#e2e8f0', 'arrowRed', 'db-loads');
+      // Day flow: array -> controller -> battery; battery -> inverter -> db
+      // Night flow: battery -> inverter -> db (panel/controller idle)
+      if (!isNight) {
+        createPath(`M${pts.array.right} ${pts.array.y} L${pts.controller.left} ${pts.controller.y}`, '#f5c842', 'arrowGold', 'arr-ctrl');
+        createPath(`M${pts.controller.right} ${pts.controller.y} L${pts.battery.left} ${pts.battery.y}`, '#22c55e', 'arrowGreen', 'ctrl-batt');
+      }
+      createPath(`M${pts.battery.x} ${pts.battery.bottom} L${pts.inverter.x} ${pts.inverter.top}`, '#f97316', 'arrowOrange', 'batt-inv');
+      createPath(`M${pts.inverter.left} ${pts.inverter.y} L${pts.db.right} ${pts.db.y}`, '#ef4444', 'arrowRed', 'inv-db');
+      createPath(`M${pts.db.left} ${pts.db.y} L${pts.db.left - 30} ${pts.db.y}`, '#e2e8f0', 'arrowRed', 'db-loads');
     }
-
-    const styleSheet = document.createElement('style');
-    styleSheet.textContent = `
-      @keyframes dashMove { to { stroke-dashoffset: -52; } }
-      @keyframes dashReverse { to { stroke-dashoffset: 52; } }
-    `;
-    document.head.appendChild(styleSheet);
 
     function setMode(night) {
       isNight = night;
@@ -651,10 +628,16 @@
     dayBtn.addEventListener('click', () => setMode(false));
     nightBtn.addEventListener('click', () => setMode(true));
 
-    window.addEventListener('load', () => {
+    function init() {
       drawWires();
       renderInfo('array');
-    });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
     window.addEventListener('resize', drawWires);
   </script>
 </body>
