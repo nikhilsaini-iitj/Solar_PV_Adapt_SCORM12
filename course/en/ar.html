@@ -65,13 +65,13 @@
     justify-content: center;
     white-space: nowrap;
   }
-  .ar-btn, #direct-usdz {
+  .ar-btn, #direct-usdz, #force-usdz {
     bottom: 28px;
     background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
     color: #0b1622;
     text-decoration: none;
   }
-  .ar-btn img {
+  .ar-btn img, #direct-usdz img, #force-usdz img {
     position: absolute;
     top: 0;
     left: 0;
@@ -84,7 +84,7 @@
     position: relative;
     z-index: 1;
   }
-  .ar-btn:disabled, #direct-usdz:disabled {
+  .ar-btn:disabled, #direct-usdz:disabled, #force-usdz:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -274,8 +274,15 @@
   ⛶ Launch AR
 </button>
 
-<button id="direct-usdz" class="ar-btn" style="display:none;" onclick="openUSDZ()">
-  ⛶ View in AR
+<!-- Always-visible direct USDZ link for iOS. Hidden until JS confirms iOS. -->
+<a id="direct-usdz" class="ar-btn" href="panel.usdz" rel="ar" target="_top" style="display:none;">
+  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" />
+  <span class="ar-btn-text">⛶ View in AR</span>
+</a>
+
+<!-- Fallback direct USDZ button in case rel=ar link is blocked -->
+<button id="force-usdz" class="ar-btn" style="display:none;" onclick="forceUSDZ()">
+  ⛶ Open AR model
 </button>
 
 <div class="tips" id="tips">
@@ -298,6 +305,8 @@
   const autoBtn = document.getElementById('auto-ar');
   const androidBtn = document.getElementById('android-ar');
   const launchBtn = document.getElementById('launch-ar');
+  const directBtn = document.getElementById('direct-usdz');
+  const forceBtn = document.getElementById('force-usdz');
   const tips = document.getElementById('tips');
   const errorBox = document.getElementById('error');
   const fallback = document.getElementById('fallback');
@@ -330,18 +339,15 @@
   function openUSDZ() {
     arMode = 'ios-quicklook-direct';
     xapiStart();
-    try {
-      // Break out of any iframe (e.g. Adapt solar-embed) so iOS Safari can open Quick Look
-      if (window.top && window.top !== window) {
-        window.top.location.href = 'panel.usdz';
-        return;
-      }
-    } catch (e) {
-      console.warn('Cannot access window.top', e);
-    }
     window.location.href = 'panel.usdz';
   }
   window.openUSDZ = openUSDZ;
+
+  window.forceUSDZ = () => {
+    arMode = 'ios-force-usdz';
+    xapiStart();
+    window.location.href = 'panel.usdz';
+  };
 
   function activateModelViewerAR() {
     arMode = isIOS ? 'ios-modelviewer' : 'model-viewer';
@@ -364,15 +370,11 @@
   // iOS: use direct AR Quick Look link (most reliable)
   if (isIOS) {
     document.body.classList.add('ios');
+    iosBtn.style.display = 'none';
+    launchBtn.style.display = 'none';
+    // Always show the direct USDZ button; fallback button only if Quick Look link is blocked
+    directBtn.style.display = 'flex';
     tips.innerHTML = 'Tap <b>View in AR</b> to place the panel on a floor or wall.<br>Drag to reposition; pinch to resize.';
-    if (supportsQuickLook()) {
-      iosBtn.style.display = 'flex';
-      launchBtn.style.display = 'none';
-    } else {
-      // In-app browsers / WebViews without rel=ar support: direct USDZ navigation
-      directBtn.style.display = 'flex';
-      launchBtn.style.display = 'none';
-    }
   } else if (isAndroid) {
     document.body.classList.add('android');
     autoBtn.style.display = 'flex';
