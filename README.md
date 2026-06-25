@@ -18,7 +18,9 @@ A SCORM 1.2 course built with [Adapt Framework](https://www.adaptlearning.org/) 
 
 ## SCORM package
 
-Download the ready-to-upload zip from the repository releases, or zip the contents of this branch and import it into your LMS.
+Download the ready-to-upload LMS zip: **[Solar_PV_Adapt_SCORM12.zip](https://github.com/nikhilsaini-iitj/Solar_PV_Adapt_SCORM12/releases/download/v1.0.0/Solar_PV_Adapt_SCORM12.zip)**
+
+Or zip the contents of this branch and import it into your LMS.
 
 ## License
 
