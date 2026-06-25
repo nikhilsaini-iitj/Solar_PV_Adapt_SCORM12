@@ -18,6 +18,7 @@
     color: #fff;
   }
   model-viewer {
+    position: relative;
     width: 100vw;
     height: 100vh;
     display: block;
@@ -36,7 +37,12 @@
     line-height: 1.4;
   }
   .header b { color: #F2CB73; }
-  #ar-button {
+  .ar-btn {
+    position: absolute;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
     background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
     color: #0b1622;
     border: none;
@@ -49,21 +55,26 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    text-decoration: none;
   }
-  .error {
+  .ar-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  .error, .fallback {
     position: absolute;
     bottom: 100px;
     left: 16px;
     right: 16px;
     z-index: 30;
-    background: rgba(176, 0, 32, 0.9);
-    color: #fff;
     padding: 12px 16px;
     border-radius: 10px;
     font-size: 13px;
     text-align: center;
     display: none;
   }
+  .error { background: rgba(176, 0, 32, 0.9); color: #fff; }
+  .fallback { background: rgba(10, 22, 38, 0.85); color: #cfe0f0; }
   .tips {
     position: absolute;
     bottom: 96px;
@@ -81,53 +92,99 @@
 </head>
 <body>
 <div class="header">
-  Wait for the 3D model to load, then tap <b>View in AR</b> to place it in your space — no marker needed.
+  3D solar panel preview. Tap <b>View in AR</b> to place it in your space.
 </div>
 
 <!--
-  Google model-viewer AR modes:
-  - WebXR (Android Chrome, in-browser)
-  - Scene Viewer (Android fallback)
-  - Quick Look (iOS Safari, requires ios-src USDZ)
-  Served over HTTPS via GitHub Pages.
+  AR delivery strategy:
+  - Android: model-viewer WebXR / Scene Viewer via GLB.
+  - iOS: direct AR Quick Look link to panel.usdz (most reliable on Safari).
 -->
 <model-viewer
   id="viewer"
   src="panel.glb"
-  ios-src="panel.usdz"
   alt="Solar PV module"
   ar
-  ar-modes="webxr scene-viewer quick-look"
+  ar-modes="webxr scene-viewer"
   camera-controls
   auto-rotate
   exposure="1"
   shadow-intensity="1"
-  camera-orbit="0deg 75deg 2.5m"
+  camera-orbit="0deg 60deg 2.2m"
   field-of-view="30deg"
   interaction-prompt="none"
   ar-scale="fixed"
   ar-placement="floor"
-  environment-image="neutral">
-  <button id="ar-button" slot="ar-button">
-    ⛶ View in AR
-  </button>
+  environment-image="neutral"
+  scale="0.5 0.5 0.5"
+  style="display: block;">
 </model-viewer>
 
-<div class="tips">
-  Tip: move your phone slowly and point at an open floor so AR can find a surface.
+<!-- iOS AR Quick Look direct link -->
+<a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn" style="display:none;">
+  ⛶ View in AR
+</a>
+
+<!-- Android / WebXR fallback button -->
+<button id="android-ar" class="ar-btn" style="display:none;" onclick="startAndroidAR()">
+  ⛶ View in AR
+</button>
+
+<div class="tips" id="tips">
+  Move your phone slowly and point at an open floor so AR can find a surface.
 </div>
 
 <div class="error" id="error"></div>
 
+<div class="fallback" id="fallback">
+  AR is not available on this browser or device. Try Safari on iPhone, or Chrome on a recent Android phone.
+</div>
+
 <script type="module">
   const viewer = document.getElementById('viewer');
-  const error = document.getElementById('error');
+  const iosBtn = document.getElementById('ios-ar');
+  const androidBtn = document.getElementById('android-ar');
+  const tips = document.getElementById('tips');
+  const errorBox = document.getElementById('error');
+  const fallback = document.getElementById('fallback');
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  const isAndroid = /android/i.test(navigator.userAgent);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+
+  // iOS Safari: use direct AR Quick Look link (most reliable)
+  if (isIOS) {
+    iosBtn.style.display = 'flex';
+    tips.style.bottom = '96px';
+  } else if (isAndroid) {
+    androidBtn.style.display = 'flex';
+    tips.style.bottom = '96px';
+  } else {
+    // Desktop / other: show 3D preview, hide tips, show fallback note
+    tips.style.display = 'none';
+    fallback.style.display = 'block';
+    fallback.style.bottom = '28px';
+  }
+
+  window.startAndroidAR = () => {
+    if (viewer.canActivateAR) {
+      viewer.activateAR();
+    } else {
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'AR is not ready. Make sure you are using Chrome on an ARCore-supported Android phone.';
+    }
+  };
 
   viewer.addEventListener('error', (e) => {
-    error.style.display = 'block';
-    error.textContent = 'Could not load the 3D model. Please check your internet connection and refresh.';
+    errorBox.style.display = 'block';
+    errorBox.textContent = 'Could not load the 3D model. Please check your connection and refresh.';
     console.error('model-viewer error', e.detail);
   });
+
+  // If iOS but not Safari, the rel=ar link may not work; give a hint
+  if (isIOS && !isSafari) {
+    tips.textContent = 'For best AR results, open this page in Safari.';
+  }
 </script>
 </body>
 </html>
