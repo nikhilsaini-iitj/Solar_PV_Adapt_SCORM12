@@ -65,12 +65,26 @@
     justify-content: center;
     white-space: nowrap;
   }
-  .ar-btn {
+  .ar-btn, #direct-usdz {
     bottom: 28px;
     background: linear-gradient(180deg, #F2CB73 0%, #E7B24C 100%);
     color: #0b1622;
+    text-decoration: none;
   }
-  .ar-btn:disabled {
+  .ar-btn img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .ar-btn-text {
+    position: relative;
+    z-index: 1;
+  }
+  .ar-btn:disabled, #direct-usdz:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
@@ -197,9 +211,10 @@
 <model-viewer
   id="viewer"
   src="panel.glb"
+  ios-src="panel.usdz"
   alt="Solar PV module"
   ar
-  ar-modes="webxr scene-viewer"
+  ar-modes="webxr scene-viewer quick-look"
   camera-controls
   auto-rotate
   exposure="1"
@@ -238,9 +253,10 @@
   <button id="exit-ar-btn" class="ar-btn" style="bottom: 28px;">✕ Exit AR</button>
 </div>
 
-<!-- iOS AR Quick Look direct link (manual placement) -->
-<a id="ios-ar" href="panel.usdz" rel="ar" class="ar-btn" style="display:none;">
-  ⛶ View in AR
+<!-- iOS AR Quick Look direct link (manual placement). Apple requires an img child. -->
+<a id="ios-ar" href="panel.usdz" rel="ar" target="_top" class="ar-btn" style="display:none;">
+  <img src="images/first-frames/03_Inside_the_Module-first-frame.jpg" alt="Solar PV module" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none;" />
+  <span class="ar-btn-text">⛶ View in AR</span>
 </a>
 
 <!-- Android Auto-track AR (WebXR) -->
@@ -256,6 +272,10 @@
 <!-- Generic launch AR button: shown if JS hasn't detected platform or model-viewer AR is available -->
 <button id="launch-ar" class="ar-btn" onclick="startGenericAR()">
   ⛶ Launch AR
+</button>
+
+<button id="direct-usdz" class="ar-btn" style="display:none;" onclick="openUSDZ()">
+  ⛶ View in AR
 </button>
 
 <div class="tips" id="tips">
@@ -274,6 +294,7 @@
 
   const viewer = document.getElementById('viewer');
   const iosBtn = document.getElementById('ios-ar');
+  const directBtn = document.getElementById('direct-usdz');
   const autoBtn = document.getElementById('auto-ar');
   const androidBtn = document.getElementById('android-ar');
   const launchBtn = document.getElementById('launch-ar');
@@ -291,11 +312,12 @@
   const silhouetteBtn = document.getElementById('silhouetteBtn');
   const shadowBtn = document.getElementById('shadowBtn');
 
-  const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-  const isIOS = /iPad|iPhone|iPod|iOS/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-  const isAndroid = /android/i.test(ua);
-  const isSafari = /^((?!chrome|android|crios|fxios).)*safari/i.test(ua);
-  const isMobile = isIOS || isAndroid || /mobile/i.test(ua);
+  const ua = (navigator.userAgent || navigator.vendor || window.opera || '').toLowerCase();
+  const platform = (navigator.platform || '').toLowerCase();
+  const isIOS = /iphone|ipad|ipod|ios/.test(ua) || /iphone|ipad|ipod/.test(platform) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1 && 'ontouchend' in document);
+  const isAndroid = /android/.test(ua);
+  const isSafari = /^((?!chrome|android|crios|fxios|edg).)*safari/.test(navigator.userAgent);
+  const isMobile = isIOS || isAndroid || /mobile/.test(ua);
   let arMode = isIOS ? 'ios-quicklook' : (isAndroid ? 'android-auto' : 'generic');
   let arStartTime = 0;
   let lockCount = 0;
@@ -305,18 +327,51 @@
     return a.relList && a.relList.supports && a.relList.supports('ar');
   }
 
+  function openUSDZ() {
+    arMode = 'ios-quicklook-direct';
+    xapiStart();
+    try {
+      // Break out of any iframe (e.g. Adapt solar-embed) so iOS Safari can open Quick Look
+      if (window.top && window.top !== window) {
+        window.top.location.href = 'panel.usdz';
+        return;
+      }
+    } catch (e) {
+      console.warn('Cannot access window.top', e);
+    }
+    window.location.href = 'panel.usdz';
+  }
+  window.openUSDZ = openUSDZ;
+
+  function activateModelViewerAR() {
+    arMode = isIOS ? 'ios-modelviewer' : 'model-viewer';
+    xapiStart();
+    if (viewer.canActivateAR) {
+      try {
+        viewer.activateAR();
+      } catch (err) {
+        console.error('activateAR error', err);
+        if (isIOS) openUSDZ();
+      }
+    } else if (isIOS) {
+      openUSDZ();
+    } else {
+      errorBox.style.display = 'block';
+      errorBox.textContent = 'AR is not ready on this browser. Try Safari on iPhone or Chrome on a recent Android phone.';
+    }
+  }
+
   // iOS: use direct AR Quick Look link (most reliable)
   if (isIOS) {
     document.body.classList.add('ios');
-    iosBtn.style.display = 'flex';
-    launchBtn.style.display = 'none';
-    tips.innerHTML = 'Tap <b>View in AR</b>, then tap the floor/wall to place the panel.<br>Drag with one finger to reposition; pinch to resize.';
-    // If rel=ar is unsupported in this WebView, swap to a plain button that opens the USDZ URL
-    if (!supportsQuickLook()) {
-      iosBtn.style.display = 'none';
-      launchBtn.style.display = 'flex';
-      launchBtn.textContent = '⛶ View in AR';
-      launchBtn.onclick = () => { arMode = 'ios-quicklook-fallback'; xapiStart(); window.location.href = 'panel.usdz'; };
+    tips.innerHTML = 'Tap <b>View in AR</b> to place the panel on a floor or wall.<br>Drag to reposition; pinch to resize.';
+    if (supportsQuickLook()) {
+      iosBtn.style.display = 'flex';
+      launchBtn.style.display = 'none';
+    } else {
+      // In-app browsers / WebViews without rel=ar support: direct USDZ navigation
+      directBtn.style.display = 'flex';
+      launchBtn.style.display = 'none';
     }
   } else if (isAndroid) {
     document.body.classList.add('android');
@@ -331,7 +386,7 @@
     fallback.style.display = 'block';
     fallback.style.bottom = '28px';
   } else {
-    // Unknown mobile: show generic launch, try model-viewer first then USDZ fallback
+    // Unknown mobile: show generic launch
     launchBtn.style.display = 'flex';
     launchBtn.textContent = '⛶ Launch AR';
   }
@@ -346,18 +401,13 @@
   }
 
   window.startGenericAR = () => {
-    arMode = isIOS ? 'ios-quicklook-fallback' : 'generic-model-viewer';
-    xapiStart();
-    if (!isIOS && viewer.canActivateAR) {
-      viewer.activateAR();
-    } else if (isIOS) {
-      // Direct USDZ fallback for iOS WebView / browsers without model-viewer AR
-      window.location.href = 'panel.usdz';
-    } else {
-      errorBox.style.display = 'block';
-      errorBox.textContent = 'AR is not ready on this browser. Try Safari on iPhone or Chrome on a recent Android phone.';
-    }
+    activateModelViewerAR();
   };
+
+  iosBtn.addEventListener('click', () => {
+    arMode = 'ios-quicklook';
+    xapiStart();
+  });
 
   window.startAndroidAR = () => {
     arMode = 'android-scene-viewer';
@@ -369,11 +419,6 @@
       errorBox.textContent = 'AR is not ready. Make sure you are using Chrome on an ARCore-supported Android phone.';
     }
   };
-
-  iosBtn.addEventListener('click', () => {
-    arMode = 'ios-quicklook';
-    xapiStart();
-  });
 
   viewer.addEventListener('error', (e) => {
     errorBox.style.display = 'block';
