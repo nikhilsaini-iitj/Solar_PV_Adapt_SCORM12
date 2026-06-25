@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Interactive Component Lab</title>
+<script src="xapi.js"></script>
 <style>
   :root{--primary:#0A5CD6;--primary-d:#0746a8;--primarybg:#eef4fe;--ink:#191c1f;--body:#3c4450;
     --muted:#6a727c;--line:#e5e8ee;--bg:#fff;--bg2:#f6f8fb;--green:#0f6b3d;--greenbg:#e8f6ee;
@@ -135,6 +136,7 @@ document.getElementById('checkBuild').onclick=()=>{
   v.style.display='block';v.className='verdict '+(ok?'ok':'no');
   v.textContent=ok?'✓ Correct — glass on top, cells sealed in EVA, back-sheet at the base.':'Not yet. The sun-facing glass goes on top and the back-sheet at the bottom, with the cells sealed between the two EVA layers.';
   if(ok)document.querySelectorAll('#stack .lay').forEach(l=>l.classList.add('correct'));
+  if(window.SolarXAPI) SolarXAPI.completed('interactives/build','Build the module',{success:ok,score:{scaled:ok?1:0},response:build.join(',')});
 };
 document.getElementById('shuffleBuild').onclick=()=>{do{shuffle(build);}while(build.every((v,i)=>v===i));renderBuild();};
 shuffle(build);renderBuild();
@@ -154,10 +156,12 @@ function sizeCalc(){
   v.className='verdict '+(fits?'ok':'no');
   v.textContent=fits?`✓ ${panels} ${S.n} panels fit in ${area.toFixed(1)} m² of your ${roof} m² roof.`
                     :`✗ ${panels} ${S.n} panels need ${area.toFixed(1)} m² — more than your ${roof} m² roof. Try a higher-efficiency type or a smaller target.`;
+  if(window.SolarXAPI) SolarXAPI.interacted('interactives/sizing','Sizing simulator',{response:`${kw}kW|${roof}m2|${sizeT}|${panels}|${area.toFixed(1)}`});
 }
 document.getElementById('kw').oninput=sizeCalc; document.getElementById('area').oninput=sizeCalc;
 document.getElementById('sizeType').onclick=e=>{const o=e.target.closest('.o');if(!o)return;
-  document.querySelectorAll('#sizeType .o').forEach(x=>x.classList.remove('on'));o.classList.add('on');sizeT=o.dataset.t;sizeCalc();};
+  document.querySelectorAll('#sizeType .o').forEach(x=>x.classList.remove('on'));o.classList.add('on');sizeT=o.dataset.t;sizeCalc();
+  if(window.SolarXAPI) SolarXAPI.interacted('interactives/sizing/type','Panel type selected',{response:sizeT});};
 sizeCalc();
 
 /* ---- 3 temperature & output chart (canvas) ---- */
@@ -182,7 +186,8 @@ function drawChart(){
     cx.textAlign='left';
   });
 }
-document.getElementById('temp').oninput=drawChart;drawChart();
+document.getElementById('temp').oninput=()=>{drawChart();if(window.SolarXAPI) SolarXAPI.interacted('interactives/temperature','Temperature slider',{response:document.getElementById('temp').value});};
+drawChart();
 
 /* ---- 4 choose the right panel ---- */
 const choice={space:'tight',budget:'low',climate:'hot'};
@@ -197,8 +202,10 @@ function recommend(){
   else {pick='Monocrystalline';why='it balances efficiency and long-term value for these conditions.';}
   const v=document.getElementById('recVerdict');v.className='verdict ok';
   v.innerHTML=`Recommended: <b>${pick}</b> — ${why}`;
+  if(window.SolarXAPI) SolarXAPI.interacted('interactives/recommend','Panel recommendation',{response:`${choice.space}|${choice.budget}|${choice.climate}|${pick}`});
 }
 recommend();
+if(window.SolarXAPI) SolarXAPI.launched('interactives','Interactive component lab');
 </script>
 </body>
 </html>

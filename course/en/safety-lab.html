@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Solar PV — Safety Lab</title>
+<script src="xapi.js"></script>
+<style>
+  :root{--ink:#0b1622;--bg:#f4f7fb;--card:#fff;--line:#d6e2ef;--primary:#0A5CD6;--primary-d:#0742a0;--gold:#F2CB73;
+    --green:#0f6b3d;--greenbg:#e8f6ee;--red:#b42318;--redbg:#fdecea;--amber:#E8920B;--amberbg:#fff4e0;--radius:14px;}
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0;font-family:"Segoe UI",system-ui,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink)}
+  .wrap{max-width:720px;margin:0 auto;padding:18px}
+  h1{font-size:1.5rem;margin:0 0 6px}
+  .sub{color:#5a6b7b;font-size:.95rem;margin:0 0 18px}
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .tab{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:10px 16px;font-weight:700;font-size:13px;cursor:pointer;color:#5a6b7b}
+  .tab.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .panel{display:none}.panel.on{display:block;animation:fade .25s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:0 8px 24px rgba(10,38,66,.06)}
+  h2{margin:0 0 10px;font-size:1.15rem}
+  .desc{color:#3c4450;font-size:.9rem;line-height:1.5;margin-bottom:18px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:12px;margin:14px 0}
+  .item{border:2px solid var(--line);border-radius:12px;padding:12px;text-align:center;cursor:pointer;background:#fff;transition:border-color .15s,background .15s}
+  .item:hover{border-color:#9bb8d8}
+  .item.selected{border-color:var(--primary);background:#eef5ff}
+  .item img{width:56px;height:56px;object-fit:contain;margin-bottom:8px}
+  .item .label{font-size:12px;font-weight:700;color:#1c2a36}
+  .item .sub2{font-size:11px;color:#6a727c;margin-top:4px}
+  .btn{border:none;background:var(--primary);color:#fff;border-radius:10px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer}
+  .btn:disabled{opacity:.5;cursor:not-allowed}
+  .btn.sec{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  .verdict{margin-top:16px;padding:13px 15px;border-radius:11px;font-weight:700;font-size:14px;display:none}
+  .verdict.ok{background:var(--greenbg);color:var(--green);border:1px solid #bfe6cd}
+  .verdict.no{background:var(--redbg);color:var(--red);border:1px solid #f5c6c0}
+  .step-list{display:flex;flex-direction:column;gap:10px;margin:16px 0}
+  .step{border:1px solid var(--line);border-radius:10px;padding:12px 14px;background:#fff;display:flex;align-items:center;gap:12px;cursor:grab}
+  .step .num{width:26px;height:26px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+  .step.dragging{opacity:.5}
+  .step .handle{color:#9aa8b8;font-size:16px;margin-left:auto;cursor:grab}
+  .order-btns{display:flex;gap:8px;margin-left:auto}
+  .order-btns button{width:28px;height:28px;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;font-size:12px}
+  .meter-card{display:flex;gap:16px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:14px;background:#fff;margin:12px 0}
+  .meter-card img{width:90px;flex-shrink:0}
+  .meter-info{flex:1}
+  .meter-info h4{margin:0 0 4px;font-size:.95rem}
+  .meter-info p{margin:0;font-size:.85rem;color:#5a6b7b}
+  .choice-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+  .choice{border:1px solid var(--line);border-radius:8px;padding:8px 12px;font-size:13px;font-weight:700;cursor:pointer;background:#fff}
+  .choice.on{background:var(--primary);color:#fff;border-color:var(--primary)}
+  .badge{display:inline-flex;align-items:center;gap:6px;background:var(--greenbg);color:var(--green);border:1px solid #bfe6cd;border-radius:20px;padding:6px 12px;font-size:12px;font-weight:700;margin-top:10px}
+  @media (max-width:480px){.meter-card{flex-direction:column;align-items:flex-start}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>⚡ Electrical safety lab</h1>
+  <p class="sub">Three quick simulations every solar installer should pass before working on a live array.</p>
+
+  <div class="tabs" id="tabs"></div>
+
+  <!-- 1. PPE SELECTOR -->
+  <section class="panel on" id="p0"><div class="card">
+    <h2>PPE for DC isolator inspection</h2>
+    <p class="desc">You are about to open a DC isolator on a PV string. Select every item required before you touch it. Wrong choices cost points.</p>
+
+    <div class="grid" id="ppeGrid"></div>
+
+    <div style="text-align:center">
+      <button class="btn" id="checkPpe">Check selection</button>
+      <button class="btn sec" id="resetPpe">Reset</button>
+    </div>
+    <div class="verdict" id="ppeVerdict"></div>
+  </div></section>
+
+  <!-- 2. LOTO SEQUENCE -->
+  <section class="panel" id="p1"><div class="card">
+    <h2>Lockout / tagout sequence</h2>
+    <p class="desc">Order the five steps for safe isolation of a PV array. Use the arrows to reorder, then check.</p>
+
+    <div class="step-list" id="lotoSteps"></div>
+
+    <div style="text-align:center">
+      <button class="btn" id="checkLoto">Check sequence</button>
+      <button class="btn sec" id="shuffleLoto">Shuffle</button>
+    </div>
+    <div class="verdict" id="lotoVerdict"></div>
+  </div></section>
+
+  <!-- 3. MULTIMETER CAT RATING -->
+  <section class="panel" id="p2"><div class="card">
+    <h2>Multimeter category rating</h2>
+    <p class="desc">You need to measure open-circuit voltage on a PV string at the inverter DC input. Which meter category is the minimum safe choice?</p>
+
+    <div class="meter-card">
+      <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 60'%3E%3Crect x='10' y='10' width='80' height='40' rx='5' fill='%230b1622'/%3E%3Ctext x='50' y='38' text-anchor='middle' fill='%23F2CB73' font-size='14' font-family='sans-serif' font-weight='700'%3EVΩA%3C/text%3E%3C/svg%3E" alt="Multimeter icon">
+      <div class="meter-info">
+        <h4>PV string measurement at inverter DC terminals</h4>
+        <p>Potential transient voltages exist on the DC side. IEC 61010 category rating matters.</p>
+        <div class="choice-row" id="catChoices"></div>
+      </div>
+    </div>
+
+    <div class="verdict" id="catVerdict"></div>
+  </div></section>
+</div>
+
+<script>
+/* tabs */
+const TABS=['PPE selector','LOTO sequence','Multimeter CAT'];
+const tabsEl=document.getElementById('tabs');
+TABS.forEach((t,i)=>{
+  const b=document.createElement('div');b.className='tab'+(i===0?' on':'');b.textContent=t;
+  b.onclick=()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    document.querySelectorAll('.panel').forEach((p,k)=>p.classList.toggle('on',k===i));
+    if(window.SolarXAPI) SolarXAPI.interacted('safety-lab','tab-switch',{response:i+'-'+t});
+  };
+  tabsEl.appendChild(b);
+});
+
+/* ---------- 1. PPE selector ---------- */
+const PPE=[
+  {id:'face',name:'Arc-rated face shield',icon:'🛡️',correct:true,sub:' protects eyes/face from arc flash'},
+  {id:'gloves',name:'Insulated gloves',icon:'🧤',correct:true,sub:' rated for the system voltage'},
+  {id:'helmet',name:'Hard hat',icon:'⛑️',correct:true,sub:' required on any construction site'},
+  {id:'shoes',name:'Insulated safety shoes',icon:'👞',correct:false,sub:' good practice, not mandatory for this task'},
+  {id:'vest',name:'High-vis vest',icon:'🦺',correct:false,sub:' site visibility, not shock protection'},
+  {id:'cotton',name:'Cotton t-shirt',icon:'👕',correct:false,sub:' cotton ignites; arc-rated clothing is needed'}
+];
+let ppeSel=new Set();
+const ppeGrid=document.getElementById('ppeGrid');
+function renderPPE(){
+  ppeGrid.innerHTML='';
+  PPE.forEach(it=>{
+    const d=document.createElement('div');d.className='item'+(ppeSel.has(it.id)?' selected':'');
+    d.innerHTML=`<div style="font-size:36px;line-height:1">${it.icon}</div>
+      <div class="label">${it.name}</div>
+      <div class="sub2">${ppeSel.has(it.id)?(it.correct?'✓ Required':'✗ Not required'):'Tap to select'}</div>`;
+    d.onclick=()=>{
+      ppeSel.has(it.id)?ppeSel.delete(it.id):ppeSel.add(it.id);
+      renderPPE();
+      if(window.SolarXAPI) SolarXAPI.interacted('safety-lab/ppe',it.name,{response:ppeSel.has(it.id)?'selected':'deselected'});
+    };
+    ppeGrid.appendChild(d);
+  });
+}
+renderPPE();
+
+document.getElementById('checkPpe').onclick=()=>{
+  const required=['face','gloves','helmet'];
+  const selectedCorrect=[...ppeSel].every(id=>PPE.find(p=>p.id===id).correct);
+  const allRequired=required.every(r=>ppeSel.has(r));
+  const noWrong=[...ppeSel].filter(id=>!PPE.find(p=>p.id===id).correct).length===0;
+  const ok=allRequired && noWrong;
+  const v=document.getElementById('ppeVerdict');
+  v.style.display='block';v.className='verdict '+(ok?'ok':'no');
+  v.innerHTML=(ok?
+    '✓ Correct. Before touching a DC isolator you need arc-rated face protection, insulated gloves, and a hard hat.'+
+    '<div class="badge">🥽 Safety Ready — PPE step complete</div>':
+    'Not quite. Required: arc-rated face shield, insulated gloves, hard hat. Avoid cotton clothing and items that are only general site PPE.');
+  if(window.SolarXAPI) SolarXAPI.completed('safety-lab/ppe','PPE selector',{success:ok,score:{scaled:ok?1:0},response:[...ppeSel].join(',')});
+};
+
+document.getElementById('resetPpe').onclick=()=>{ppeSel.clear();renderPPE();document.getElementById('ppeVerdict').style.display='none';};
+
+/* ---------- 2. LOTO sequence ---------- */
+const LOTO_STEPS=[
+  {text:'Notify affected persons',id:'notify'},
+  {text:'Isolate the energy source (open DC disconnect)',id:'isolate'},
+  {text:'Verify zero energy with a qualified meter',id:'verify'},
+  {text:'Apply lock and tag to the disconnect',id:'lock'},
+  {text:'Test the circuit is de-energised before touching',id:'test'}
+];
+let loto=[0,1,2,3,4];
+const lotoEl=document.getElementById('lotoSteps');
+function renderLoto(){
+  lotoEl.innerHTML='';
+  loto.forEach((idx,pos)=>{
+    const step=LOTO_STEPS[idx];
+    const d=document.createElement('div');d.className='step';
+    d.innerHTML=`<span class="num">${pos+1}</span>
+      <span>${step.text}</span>
+      <span class="order-btns">
+        <button data-up="${pos}" ${pos===0?'disabled':''}>▲</button>
+        <button data-dn="${pos}" ${pos===loto.length-1?'disabled':''}>▼</button>
+      </span>`;
+    lotoEl.appendChild(d);
+  });
+  lotoEl.querySelectorAll('[data-up]').forEach(b=>b.onclick=()=>{
+    const p=+b.dataset.up;if(p>0){[loto[p-1],loto[p]]=[loto[p],loto[p-1]];renderLoto();}
+  });
+  lotoEl.querySelectorAll('[data-dn]').forEach(b=>b.onclick=()=>{
+    const p=+b.dataset.dn;if(p<loto.length-1){[loto[p+1],loto[p]]=[loto[p],loto[p+1]];renderLoto();}
+  });
+}
+renderLoto();
+
+document.getElementById('checkLoto').onclick=()=>{
+  const ok=loto.every((v,i)=>v===i);
+  const v=document.getElementById('lotoVerdict');
+  v.style.display='block';v.className='verdict '+(ok?'ok':'no');
+  v.innerHTML=(ok?
+    '✓ Correct — notify, isolate, verify, lock, then test before touching.'+
+    '<div class="badge">🥽 Safety Ready — LOTO step complete</div>':
+    'Not yet. The safe order is: notify → isolate → verify zero energy → lock/tag → test.');
+  if(window.SolarXAPI) SolarXAPI.completed('safety-lab/loto','LOTO sequence',{success:ok,score:{scaled:ok?1:0},response:loto.map(i=>LOTO_STEPS[i].id).join(',')});
+};
+
+document.getElementById('shuffleLoto').onclick=()=>{
+  do{for(let i=loto.length-1;i>0;i--){const j=Math.random()*(i+1)|0;[loto[i],loto[j]]=[loto[j],loto[i]];}}
+  while(loto.every((v,i)=>v===i));
+  renderLoto();document.getElementById('lotoVerdict').style.display='none';
+};
+
+/* ---------- 3. Multimeter CAT rating ---------- */
+const CAT_OPTIONS=[
+  {id:'cat2',text:'CAT II',ok:false},
+  {id:'cat3',text:'CAT III',ok:true},
+  {id:'cat4',text:'CAT IV',ok:true},
+  {id:'none',text:'No rating needed',ok:false}
+];
+let catSel='';
+const catEl=document.getElementById('catChoices');
+function renderCat(){
+  catEl.innerHTML='';
+  CAT_OPTIONS.forEach(o=>{
+    const d=document.createElement('span');d.className='choice'+(catSel===o.id?' on':'');d.textContent=o.text;
+    d.onclick=()=>{catSel=o.id;renderCat();checkCat();};
+    catEl.appendChild(d);
+  });
+}
+function checkCat(){
+  const o=CAT_OPTIONS.find(c=>c.id===catSel);
+  const v=document.getElementById('catVerdict');
+  v.style.display='block';v.className='verdict '+(o.ok?'ok':'no');
+  v.innerHTML=(o.ok?
+    `✓ Correct — ${o.text} is the minimum safe rating for measurements at inverter DC terminals where transient overvoltages can occur.`+
+    '<div class="badge">🥽 Safety Ready — Meter step complete</div>':
+    'Not safe. At inverter DC terminals you need at least CAT III to handle possible transient overvoltages.');
+  if(window.SolarXAPI) SolarXAPI.completed('safety-lab/cat','Multimeter CAT rating',{success:o.ok,score:{scaled:o.ok?1:0},response:o.text});
+}
+renderCat();
+
+/* ---------- launch event ---------- */
+if(window.SolarXAPI) SolarXAPI.launched('safety-lab','Electrical safety lab');
+</script>
+</body>
+</html>

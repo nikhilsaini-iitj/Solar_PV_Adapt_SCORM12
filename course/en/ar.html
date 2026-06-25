@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
 <title>AR — Solar PV Module</title>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+<script src="xapi.js"></script>
 <style>
   * { box-sizing: border-box; }
   html, body {
@@ -123,7 +124,8 @@
     display: none;
   }
   #xr-overlay .ar-btn,
-  #xr-overlay .ar-btn-secondary {
+  #xr-overlay .ar-btn-secondary,
+  #xr-overlay .ar-tools {
     pointer-events: auto;
   }
   #tracking-status {
@@ -138,6 +140,46 @@
     font-size: 12px;
     font-weight: 700;
     display: none;
+  }
+  .ar-tools {
+    position: absolute;
+    top: 110px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 26;
+    background: rgba(10, 22, 38, 0.85);
+    border: 1px solid rgba(167, 188, 210, 0.25);
+    border-radius: 14px;
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: min(320px, calc(100vw - 32px));
+    color: #F4EFE6;
+    font-size: 12px;
+  }
+  .ar-tools label { display: flex; align-items: center; gap: 10px; }
+  .ar-tools input[type=range] { flex: 1; }
+  .ar-tools .row { display: flex; gap: 8px; }
+  .ar-tools button {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(167, 188, 210, 0.25);
+    color: #F4EFE6;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .ar-tools button.on { background: #F2CB73; color: #0b1622; border-color: #F2CB73; }
+  .silhouette-label {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 10px;
+    color: #A7BCD2;
+    white-space: nowrap;
   }
 </style>
 </head>
@@ -176,6 +218,22 @@
 
 <div id="xr-overlay">
   <div id="tracking-status">Finding floor…</div>
+
+  <div class="ar-tools">
+    <label>
+      ☀️ Sun angle
+      <input type="range" id="sunSlider" min="-80" max="80" value="30" />
+    </label>
+    <div class="row">
+      <button id="floorMode" class="on">Floor</button>
+      <button id="wallMode">Wall</button>
+    </div>
+    <div class="row">
+      <button id="silhouetteBtn" class="on">👤 Scale ref</button>
+      <button id="shadowBtn" class="on">🌑 Shadows</button>
+    </div>
+  </div>
+
   <button id="lock-btn" class="ar-btn-secondary" style="bottom: 96px;">🔓 Lock position</button>
   <button id="exit-ar-btn" class="ar-btn" style="bottom: 28px;">✕ Exit AR</button>
 </div>
@@ -227,10 +285,18 @@
   const lockBtn = document.getElementById('lock-btn');
   const exitArBtn = document.getElementById('exit-ar-btn');
   const trackingStatus = document.getElementById('tracking-status');
+  const sunSlider = document.getElementById('sunSlider');
+  const floorMode = document.getElementById('floorMode');
+  const wallMode = document.getElementById('wallMode');
+  const silhouetteBtn = document.getElementById('silhouetteBtn');
+  const shadowBtn = document.getElementById('shadowBtn');
 
   const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
   const isAndroid = /android/i.test(navigator.userAgent);
   const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+  let arMode = isIOS ? 'ios-quicklook' : (isAndroid ? 'android-auto' : 'generic');
+  let arStartTime = 0;
+  let lockCount = 0;
 
   // iOS Safari: use direct AR Quick Look link (most reliable)
   if (isIOS) {
@@ -252,7 +318,18 @@
     fallback.style.bottom = '28px';
   }
 
+  function xapiStart() {
+    arStartTime = performance.now();
+    if (window.SolarXAPI) SolarXAPI.launched('ar', 'AR Solar PV panel', { extensions: { 'https://solarpv.course/ar-mode': arMode } });
+  }
+  function xapiEnd() {
+    const duration = arStartTime ? ((performance.now() - arStartTime) / 1000).toFixed(1) : 0;
+    if (window.SolarXAPI) SolarXAPI.completed('ar', 'AR Solar PV panel', { duration: parseFloat(duration), extensions: { 'https://solarpv.course/ar-mode': arMode, 'https://solarpv.course/lock-toggles': lockCount } });
+  }
+
   window.startGenericAR = () => {
+    arMode = 'generic-model-viewer';
+    xapiStart();
     if (viewer.canActivateAR) {
       viewer.activateAR();
     } else {
@@ -262,6 +339,8 @@
   };
 
   window.startAndroidAR = () => {
+    arMode = 'android-scene-viewer';
+    xapiStart();
     if (viewer.canActivateAR) {
       viewer.activateAR();
     } else {
@@ -270,10 +349,16 @@
     }
   };
 
+  iosBtn.addEventListener('click', () => {
+    arMode = 'ios-quicklook';
+    xapiStart();
+  });
+
   viewer.addEventListener('error', (e) => {
     errorBox.style.display = 'block';
     errorBox.textContent = 'Could not load the 3D model. Please check your connection and refresh.';
     console.error('model-viewer error', e.detail);
+    if (window.SolarXAPI) SolarXAPI.interacted('ar', 'AR error', { response: e.detail?.type || 'unknown' });
   });
 
   if (isIOS && !isSafari) {
@@ -285,12 +370,17 @@
   let scene = null;
   let camera = null;
   let panelModel = null;
+  let silhouette = null;
+  let sunLight = null;
   let xrSession = null;
   let xrRefSpace = null;
   let xrHitTestSource = null;
   let isLocked = false;
   let panelYOffset = 0;
   let currentExitHandler = null;
+  let placementMode = 'floor'; // 'floor' | 'wall'
+  let shadowsEnabled = true;
+  let silhouetteEnabled = true;
 
   async function initThree() {
     if (renderer) return;
@@ -298,28 +388,39 @@
     renderer.setPixelRatio(window.devicePixelRatio);
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.xr.enabled = true;
+    renderer.shadowMap.enabled = true;
 
     scene = new THREE.Scene();
 
-    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    const hemi = new THREE.HemisphereLight(0xffffff, 0x444444, 1.0);
     scene.add(hemi);
-    const dir = new THREE.DirectionalLight(0xffffff, 1.5);
-    dir.position.set(1, 2, 1);
-    scene.add(dir);
+
+    sunLight = new THREE.DirectionalLight(0xfff2d6, 1.6);
+    sunLight.castShadow = true;
+    sunLight.shadow.mapSize.set(1024, 1024);
+    updateSunAngle();
+    scene.add(sunLight);
 
     camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 100);
+
+    // Human silhouette reference (1.7 m tall simple figure)
+    const silTexture = makeSilhouetteTexture();
+    const silMat = new THREE.MeshBasicMaterial({ map: silTexture, transparent: true, opacity: 0.65, side: THREE.DoubleSide });
+    silhouette = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 1.7), silMat);
+    silhouette.position.set(0.9, 0.85, 0);
+    silhouette.visible = false;
+    scene.add(silhouette);
 
     // Load panel GLB
     const loader = new GLTFLoader();
     await new Promise((resolve, reject) => {
       loader.load('panel.glb', (gltf) => {
         panelModel = gltf.scene;
-        // Panel is portrait ~1.0 x 1.69 m; in AR we show life-size
+        panelModel.traverse(o => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
         panelModel.scale.setScalar(1);
         panelModel.rotation.x = 0;
         panelModel.visible = false;
 
-        // Compute offset so bottom of panel sits exactly on the floor hit point
         const box = new THREE.Box3().setFromObject(panelModel);
         panelYOffset = -box.min.y;
         panelModel.position.y = panelYOffset;
@@ -330,7 +431,81 @@
     });
   }
 
+  function makeSilhouetteTexture() {
+    const c = document.createElement('canvas');
+    c.width = 128; c.height = 256;
+    const x = c.getContext('2d');
+    x.fillStyle = '#A7BCD2';
+    // simple person shape
+    x.beginPath();
+    x.arc(64, 28, 18, 0, Math.PI * 2);
+    x.fill();
+    x.beginPath();
+    x.moveTo(64, 50);
+    x.lineTo(38, 110);
+    x.lineTo(30, 240);
+    x.lineTo(48, 240);
+    x.lineTo(52, 160);
+    x.lineTo(64, 160);
+    x.lineTo(76, 160);
+    x.lineTo(80, 240);
+    x.lineTo(98, 240);
+    x.lineTo(90, 110);
+    x.closePath();
+    x.fill();
+    const tex = new THREE.CanvasTexture(c);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return tex;
+  }
+
+  function updateSunAngle() {
+    const deg = parseFloat(sunSlider.value);
+    const rad = THREE.MathUtils.degToRad(deg);
+    const dist = 3;
+    if (sunLight) {
+      sunLight.position.set(Math.sin(rad) * dist, Math.cos(rad) * dist, 1.2);
+      sunLight.target.position.set(0, 0, 0);
+      sunLight.target.updateMatrixWorld();
+    }
+  }
+
+  sunSlider.addEventListener('input', () => {
+    updateSunAngle();
+    if (window.SolarXAPI) SolarXAPI.interacted('ar/sun', 'Sun angle changed', { response: sunSlider.value });
+  });
+
+  floorMode.addEventListener('click', () => {
+    placementMode = 'floor';
+    floorMode.classList.add('on'); wallMode.classList.remove('on');
+    viewer.setAttribute('ar-placement', 'floor');
+    if (window.SolarXAPI) SolarXAPI.interacted('ar/mode', 'Placement mode', { response: 'floor' });
+  });
+
+  wallMode.addEventListener('click', () => {
+    placementMode = 'wall';
+    wallMode.classList.add('on'); floorMode.classList.remove('on');
+    viewer.setAttribute('ar-placement', 'wall');
+    if (window.SolarXAPI) SolarXAPI.interacted('ar/mode', 'Placement mode', { response: 'wall' });
+  });
+
+  silhouetteBtn.addEventListener('click', () => {
+    silhouetteEnabled = !silhouetteEnabled;
+    silhouetteBtn.classList.toggle('on', silhouetteEnabled);
+    if (silhouette) silhouette.visible = silhouetteEnabled && panelModel?.visible;
+    if (window.SolarXAPI) SolarXAPI.interacted('ar/silhouette', 'Scale reference toggled', { response: silhouetteEnabled ? 'on' : 'off' });
+  });
+
+  shadowBtn.addEventListener('click', () => {
+    shadowsEnabled = !shadowsEnabled;
+    shadowBtn.classList.toggle('on', shadowsEnabled);
+    if (renderer) renderer.shadowMap.enabled = shadowsEnabled;
+    if (sunLight) sunLight.castShadow = shadowsEnabled;
+    scene.traverse(o => { if (o.isMesh) { o.castShadow = shadowsEnabled; o.receiveShadow = shadowsEnabled; } });
+    if (window.SolarXAPI) SolarXAPI.interacted('ar/shadows', 'Shadows toggled', { response: shadowsEnabled ? 'on' : 'off' });
+  });
+
   window.startAutoAR = async () => {
+    arMode = 'android-webxr-auto';
     if (!navigator.xr) {
       errorBox.style.display = 'block';
       errorBox.textContent = 'Auto-tracking AR requires WebXR. Use Chrome on a recent Android phone.';
@@ -345,6 +520,7 @@
 
     errorBox.style.display = 'none';
     await initThree();
+    xapiStart();
 
     try {
       xrSession = await navigator.xr.requestSession('immersive-ar', {
@@ -358,6 +534,7 @@
       iosBtn.style.display = 'none';
       autoBtn.style.display = 'none';
       androidBtn.style.display = 'none';
+      launchBtn.style.display = 'none';
       tips.style.display = 'none';
       fallback.style.display = 'none';
       xrCanvas.style.display = 'block';
@@ -384,28 +561,49 @@
             const hitPose = hits[0].getPose(xrRefSpace);
             panelModel.visible = true;
 
-            // Position on floor at the hit point, keeping bottom on floor
-            panelModel.position.set(
-              hitPose.transform.position.x,
-              hitPose.transform.position.y + panelYOffset,
-              hitPose.transform.position.z
-            );
+            if (placementMode === 'wall') {
+              // Place panel upright on the detected vertical surface
+              panelModel.position.set(
+                hitPose.transform.position.x,
+                hitPose.transform.position.y + panelYOffset,
+                hitPose.transform.position.z
+              );
+              panelModel.rotation.x = -Math.PI / 2;
+            } else {
+              panelModel.position.set(
+                hitPose.transform.position.x,
+                hitPose.transform.position.y + panelYOffset,
+                hitPose.transform.position.z
+              );
+              panelModel.rotation.x = 0;
+            }
 
-            // Slight yaw toward camera so the front face points at the user
+            // Yaw toward camera
             const camPos = new THREE.Vector3();
             camPos.setFromMatrixPosition(camera.matrixWorld);
             const lookTarget = panelModel.position.clone();
             lookTarget.y = camPos.y;
             panelModel.lookAt(lookTarget);
 
-            trackingStatus.textContent = 'Tracking floor — moving with you';
+            if (silhouette) {
+              silhouette.visible = silhouetteEnabled;
+              silhouette.position.set(
+                panelModel.position.x + 0.9,
+                panelModel.position.y + 0.85,
+                panelModel.position.z + 0.05
+              );
+              silhouette.lookAt(camPos.x, silhouette.position.y, camPos.z);
+            }
+
+            trackingStatus.textContent = 'Tracking surface — moving with you';
             trackingStatus.style.color = '#A9D6E5';
           } else {
-            trackingStatus.textContent = 'Finding floor… point at the ground';
+            trackingStatus.textContent = 'Finding surface… point at the floor or wall';
             trackingStatus.style.color = '#F2CB73';
           }
         }
 
+        if (sunLight) sunLight.target.updateMatrixWorld();
         renderer.render(scene, camera);
       });
 
@@ -413,17 +611,21 @@
       console.error(err);
       errorBox.style.display = 'block';
       errorBox.textContent = 'Could not start AR: ' + err.message;
+      if (window.SolarXAPI) SolarXAPI.interacted('ar', 'AR start error', { response: err.message });
     }
   };
 
   function toggleLock() {
     isLocked = !isLocked;
+    lockCount++;
     lockBtn.textContent = isLocked ? '🔒 Unlock position' : '🔓 Lock position';
-    trackingStatus.textContent = isLocked ? 'Position locked' : 'Tracking floor…';
+    trackingStatus.textContent = isLocked ? 'Position locked' : 'Tracking surface…';
     trackingStatus.style.color = isLocked ? '#F2CB73' : '#A9D6E5';
+    if (window.SolarXAPI) SolarXAPI.interacted('ar/lock', 'Lock toggled', { response: isLocked ? 'locked' : 'unlocked' });
   }
 
   function onXRSessionEnd() {
+    xapiEnd();
     if (renderer) renderer.setAnimationLoop(null);
     if (xrHitTestSource) { xrHitTestSource.cancel(); xrHitTestSource = null; }
     xrSession = null;
@@ -459,6 +661,8 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     }
   });
+
+  if (window.SolarXAPI) SolarXAPI.launched('ar-page', 'AR page loaded');
 </script>
 </body>
 </html>
