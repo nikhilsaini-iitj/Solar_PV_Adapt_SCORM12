@@ -64,6 +64,19 @@
     text-align: center;
     display: none;
   }
+  .tips {
+    position: absolute;
+    bottom: 96px;
+    left: 16px;
+    right: 16px;
+    z-index: 19;
+    background: rgba(10, 22, 38, 0.75);
+    color: #cfe0f0;
+    padding: 10px 14px;
+    border-radius: 10px;
+    font-size: 12px;
+    text-align: center;
+  }
 </style>
 </head>
 <body>
@@ -71,8 +84,17 @@
   Wait for the 3D model to load, then tap <b>View in AR</b> to place it in your space — no marker needed.
 </div>
 
+<!--
+  Google model-viewer AR modes:
+  - WebXR (Android Chrome, in-browser)
+  - Scene Viewer (Android fallback)
+  - Quick Look (iOS Safari, requires ios-src USDZ)
+  Served over HTTPS via GitHub Pages.
+-->
 <model-viewer
+  id="viewer"
   src="panel.glb"
+  ios-src="panel.usdz"
   alt="Solar PV module"
   ar
   ar-modes="webxr scene-viewer quick-look"
@@ -83,19 +105,22 @@
   camera-orbit="0deg 75deg 2.5m"
   field-of-view="30deg"
   interaction-prompt="none"
-  ar-scale="auto"
+  ar-scale="fixed"
   ar-placement="floor"
-  scale="0.5 0.5 0.5"
   environment-image="neutral">
   <button id="ar-button" slot="ar-button">
     ⛶ View in AR
   </button>
 </model-viewer>
 
+<div class="tips">
+  Tip: move your phone slowly and point at an open floor so AR can find a surface.
+</div>
+
 <div class="error" id="error"></div>
 
 <script type="module">
-  const viewer = document.querySelector('model-viewer');
+  const viewer = document.getElementById('viewer');
   const error = document.getElementById('error');
 
   viewer.addEventListener('error', (e) => {
@@ -103,10 +128,6 @@
     error.textContent = 'Could not load the 3D model. Please check your internet connection and refresh.';
     console.error('model-viewer error', e.detail);
   });
-
-  // iOS Quick Look requires a USDZ in ios-src.
-  // If you add panel.usdz next to panel.glb, uncomment the line below:
-  // viewer.setAttribute('ios-src', 'panel.usdz');
 </script>
 </body>
 </html>
