@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Solar Panel Layer Explorer</title>
+  <style>
+    :root {
+      --bg: #050b14;
+      --card: #0b1426;
+      --border: #1e2d4a;
+      --gold: #f5c842;
+      --blue: #3b82f6;
+      --teal: #14b8a6;
+      --green: #22c55e;
+      --orange: #f97316;
+      --purple: #a855f7;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #93c5fd 50%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .subtitle { font-size: 0.9rem; color: var(--muted); }
+
+    .stage {
+      position: relative;
+      background: radial-gradient(ellipse 80% 70% at 50% 40%, #0f1b30 0%, #050b14 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 420px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      perspective: 900px;
+    }
+
+    .panel-stack {
+      position: relative;
+      width: min(420px, 80vw);
+      height: 280px;
+      transform-style: preserve-3d;
+      transform: rotateX(12deg) rotateY(-8deg);
+      transition: transform 0.4s ease;
+    }
+
+    .layer {
+      position: absolute;
+      left: 0;
+      right: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: top 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease, filter 0.2s ease;
+      display: flex;
+      align-items: center;
+      padding-left: 16px;
+      font-size: 13px;
+      font-weight: 700;
+      color: rgba(255, 255, 255, 0.9);
+      user-select: none;
+    }
+    .layer:hover { filter: brightness(1.15); }
+    .layer.active { box-shadow: 0 0 24px rgba(245, 200, 66, 0.45); z-index: 10; }
+
+    .layer-glass {
+      top: 0;
+      height: 36px;
+      background: linear-gradient(90deg, rgba(100, 180, 255, 0.18), rgba(120, 200, 255, 0.1));
+      border: 1.5px solid rgba(120, 200, 255, 0.55);
+      color: #7dd3fc;
+    }
+    .layer-eva1 {
+      top: 42px;
+      height: 22px;
+      background: linear-gradient(90deg, #1a2d1a, #1e3820);
+      border: 1px solid #4ade80;
+      color: #4ade80;
+    }
+    .layer-cells {
+      top: 70px;
+      height: 52px;
+      background: linear-gradient(90deg, #0d1e3a, #162448);
+      border: 2px solid #3b82f6;
+      color: #60a5fa;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .cell-grid {
+      position: absolute;
+      inset: 8px 16px 8px 16px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 2px;
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    .cell { background: rgba(30, 60, 120, 0.85); border-radius: 1px; }
+    .layer-eva2 {
+      top: 128px;
+      height: 22px;
+      background: linear-gradient(90deg, #1a2d1a, #1e3820);
+      border: 1px solid #4ade80;
+      color: #4ade80;
+    }
+    .layer-back {
+      top: 156px;
+      height: 34px;
+      background: linear-gradient(90deg, #2d1a0a, #3d2510);
+      border: 1px solid #8b5a2b;
+      color: #d97706;
+    }
+
+    /* Exploded positions (controlled by slider) */
+    .explode-hint {
+      position: absolute;
+      left: calc(100% + 18px);
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      color: rgba(255, 255, 255, 0.12);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+    }
+
+    .photon-beam {
+      position: absolute;
+      top: -40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 60px;
+      height: 40px;
+      background: linear-gradient(180deg, rgba(245, 200, 66, 0.6), transparent);
+      border-radius: 50% 50% 0 0;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .photon-beam.on { opacity: 1; }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+    }
+    .slider-row label { font-size: 0.85rem; color: var(--gold); font-weight: 700; white-space: nowrap; }
+    input[type=range] {
+      flex: 1;
+      accent-color: var(--gold);
+      height: 6px;
+      background: #1e293b;
+      border-radius: 3px;
+      outline: none;
+    }
+    .value { font-size: 0.85rem; color: var(--muted); min-width: 60px; text-align: right; }
+
+    .btn-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover, .btn.active { border-color: var(--gold); color: var(--gold); background: rgba(245, 200, 66, 0.1); }
+
+    .info-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 14px;
+      min-height: 110px;
+    }
+    .info-panel h2 {
+      font-size: 1.1rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    .info-panel p { font-size: 0.95rem; line-height: 1.6; color: var(--text); }
+    .info-panel .hint { color: var(--muted); font-size: 0.9rem; }
+
+    @media (max-width: 640px) {
+      .panel-stack { transform: rotateX(8deg) rotateY(-4deg); }
+      .explode-hint { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Inside a Solar Panel</h1>
+      <div class="subtitle">Drag the slider to explode the layers, then click each layer to read its job.</div>
+    </header>
+
+    <div class="stage">
+      <div class="photon-beam" id="photonBeam"></div>
+      <div class="panel-stack" id="stack">
+        <div class="layer layer-glass" data-id="glass" tabindex="0" role="button" aria-label="Tempered glass layer">
+          ① Tempered Glass
+        </div>
+        <div class="layer layer-eva1" data-id="eva1" tabindex="0" role="button" aria-label="Front EVA encapsulant layer">
+          ② EVA Encapsulant (front)
+        </div>
+        <div class="layer layer-cells" data-id="cells" tabindex="0" role="button" aria-label="Silicon PV cells layer">
+          ③ Silicon PV Cells
+          <div class="cell-grid">
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          </div>
+        </div>
+        <div class="layer layer-eva2" data-id="eva2" tabindex="0" role="button" aria-label="Rear EVA encapsulant layer">
+          ④ EVA Encapsulant (rear)
+        </div>
+        <div class="layer layer-back" data-id="back" tabindex="0" role="button" aria-label="Backsheet layer">
+          ⑤ Backsheet (Tedlar)
+        </div>
+      </div>
+      <div class="explode-hint">
+        <span>↕</span>
+        <span style="font-size:10px;letter-spacing:2px">EXPLODE</span>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="slider-row">
+        <label for="explode">Explode layers</label>
+        <input id="explode" type="range" min="0" max="100" value="0" aria-label="Layer separation">
+        <span class="value" id="explodeVal">0%</span>
+      </div>
+      <div class="btn-row">
+        <button class="btn" id="assembleBtn">⤓ Assemble</button>
+        <button class="btn" id="explodeBtn">⤒ Full explode</button>
+        <button class="btn" id="photonBtn">☀ Photon beam</button>
+      </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <h2>🖱 Tap a layer</h2>
+      <p class="hint">Use the slider to spread the five layers apart, then click any layer to learn its purpose.</p>
+    </div>
+  </div>
+
+  <script>
+    const layers = {
+      glass: {
+        title: '① Tempered Glass Cover',
+        body: 'The sun-facing shield. 3.2 mm low-iron tempered glass with an anti-reflective coating lets in more than 91% of incoming light while protecting the cells from hail, dust, and wind.',
+        stat: 'Transmittance: ~91.5% | IEC 61215 rated'
+      },
+      eva1: {
+        title: '② Front EVA Encapsulant',
+        body: 'A transparent thermoplastic layer that bonds the glass to the silicon cells. It seals out moisture and UV while letting photons pass through to the cells.',
+        stat: 'Material: Ethylene Vinyl Acetate | UV stable'
+      },
+      cells: {
+        title: '③ Silicon PV Cells',
+        body: 'The heart of the panel. Monocrystalline silicon cells contain a P-N junction. When photons strike, electron-hole pairs separate and create DC current.',
+        stat: 'Voltage: ~0.5 V per cell | 60 cells = ~30 V'
+      },
+      eva2: {
+        title: '④ Rear EVA Encapsulant',
+        body: 'A second EVA layer seals the cells to the backsheet. It provides electrical insulation and protects the cell rear from humidity and mechanical stress.',
+        stat: 'Same material as front EVA | Adds insulation'
+      },
+      back: {
+        title: '⑤ Backsheet (Tedlar)',
+        body: 'A tough white polymer film on the rear. It reflects unused light back toward the cells, acts as a moisture barrier, and provides electrical safety insulation.',
+        stat: 'Material: Tedlar/PVF | Reflects stray photons'
+      }
+    };
+
+    const stack = document.getElementById('stack');
+    const slider = document.getElementById('explode');
+    const explodeVal = document.getElementById('explodeVal');
+    const infoPanel = document.getElementById('infoPanel');
+    const photonBeam = document.getElementById('photonBeam');
+
+    const layerEls = [...document.querySelectorAll('.layer')];
+    const baseTops = layerEls.map(el => parseInt(el.style.top || getComputedStyle(el).top));
+
+    function renderInfo(id) {
+      const l = layers[id];
+      layerEls.forEach(el => el.classList.remove('active'));
+      document.querySelector(`.layer[data-id="${id}"]`).classList.add('active');
+      infoPanel.innerHTML = `
+        <h2>${l.title}</h2>
+        <p>${l.body}</p>
+        <p style="margin-top:8px;color:var(--gold);font-size:0.9rem;">▸ ${l.stat}</p>
+      `;
+    }
+
+    function updateStack(percent) {
+      explodeVal.textContent = percent + '%';
+      layerEls.forEach((el, i) => {
+        const offset = (percent / 100) * (i - 2) * 34;
+        el.style.top = `${baseTops[i] + offset}px`;
+      });
+    }
+
+    slider.addEventListener('input', e => updateStack(parseInt(e.target.value)));
+
+    document.getElementById('assembleBtn').addEventListener('click', () => {
+      slider.value = 0;
+      updateStack(0);
+    });
+    document.getElementById('explodeBtn').addEventListener('click', () => {
+      slider.value = 100;
+      updateStack(100);
+    });
+    document.getElementById('photonBtn').addEventListener('click', () => {
+      photonBeam.classList.toggle('on');
+      document.getElementById('photonBtn').classList.toggle('active', photonBeam.classList.contains('on'));
+    });
+
+    layerEls.forEach(el => {
+      el.addEventListener('click', () => renderInfo(el.dataset.id));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') renderInfo(el.dataset.id); });
+    });
+
+    renderInfo('cells');
+    updateStack(25);
+    slider.value = 25;
+  </script>
+</body>
+</html>

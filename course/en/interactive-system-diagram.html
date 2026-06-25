@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Solar PV System Diagram</title>
+  <style>
+    :root {
+      --bg: #050b14;
+      --card: #0b1426;
+      --border: #1e2d4a;
+      --gold: #f5c842;
+      --blue: #3b82f6;
+      --teal: #14b8a6;
+      --red: #ef4444;
+      --green: #22c55e;
+      --orange: #f97316;
+      --purple: #a855f7;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+    h1 {
+      font-size: clamp(1.2rem, 3vw, 1.8rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, #93c5fd 50%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
+    }
+    .subtitle { font-size: 0.9rem; color: var(--muted); }
+
+    .stage {
+      position: relative;
+      background: linear-gradient(180deg, #0a1628 0%, #111f38 50%, #162033 100%);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      min-height: 460px;
+      flex: 1;
+    }
+    .stage.night {
+      background: linear-gradient(180deg, #02050a 0%, #0a1020 50%, #0d1525 100%);
+    }
+
+    /* Scene background */
+    .sky { position: absolute; inset: 0; pointer-events: none; }
+    .sun {
+      position: absolute;
+      top: 10%;
+      right: 18%;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #fffbe0 0%, var(--gold) 50%, transparent 80%);
+      box-shadow: 0 0 40px 20px rgba(245, 200, 66, 0.35);
+      transition: all 0.8s ease;
+    }
+    .stage.night .sun {
+      opacity: 0.15;
+      transform: translateY(80px) scale(0.7);
+    }
+    .moon {
+      position: absolute;
+      top: 12%;
+      right: 20%;
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, #fff 0%, #d4d4d4 50%, transparent 80%);
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .stage.night .moon { opacity: 1; }
+    .stars {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      transition: opacity 0.8s ease;
+    }
+    .stage.night .stars { opacity: 0.6; }
+
+    /* Rooftop ground */
+    .roof {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 28%;
+      background: linear-gradient(180deg, #3d2e1e 0%, #2a2018 100%);
+      border-top: 2px solid #5a4030;
+      pointer-events: none;
+    }
+    .roof-grid {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 28%;
+      opacity: 0.2;
+      pointer-events: none;
+    }
+
+    /* Interactive components */
+    .component {
+      position: absolute;
+      cursor: pointer;
+      transition: transform 0.2s ease, filter 0.2s ease;
+      z-index: 2;
+    }
+    .component:hover { transform: scale(1.04); filter: drop-shadow(0 0 12px rgba(245, 200, 66, 0.4)); }
+    .component.active { filter: drop-shadow(0 0 18px rgba(245, 200, 66, 0.7)); }
+
+    /* Solar array */
+    .array-wrap {
+      left: 8%;
+      bottom: 32%;
+      width: 34%;
+      perspective: 700px;
+    }
+    .array {
+      transform: rotateX(28deg) rotateY(-3deg);
+      transform-origin: bottom center;
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      padding: 10px;
+      background: linear-gradient(180deg, #3a2a1a, #2a1e12);
+      border-radius: 4px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    }
+    .panel {
+      height: clamp(42px, 8vw, 58px);
+      background: linear-gradient(135deg, #0a1a38, #0d2250);
+      border: 1px solid #1a3870;
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .panel::after {
+      content: '';
+      position: absolute;
+      inset: 10%;
+      background-image: linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px),
+                        linear-gradient(0deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 33% 25%;
+    }
+
+    /* Charge controller */
+    .controller {
+      left: 50%;
+      bottom: 42%;
+      transform: translateX(-50%);
+      width: 110px;
+      height: 140px;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      border: 2px solid #0ea5e9;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 6px;
+      box-shadow: 0 0 25px rgba(14, 165, 233, 0.25);
+    }
+    .led-row { display: flex; gap: 6px; }
+    .led { width: 8px; height: 8px; border-radius: 50%; box-shadow: 0 0 6px; }
+    .led.green { background: var(--green); box-shadow: 0 0 8px var(--green); }
+    .led.amber { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+    .lcd {
+      width: 90%;
+      height: 46px;
+      background: #001a00;
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: 3px;
+      padding: 5px;
+      font-family: monospace;
+      font-size: 9px;
+      color: var(--green);
+      line-height: 1.4;
+    }
+    .controller-label {
+      font-size: 8px;
+      color: rgba(255, 255, 255, 0.4);
+      letter-spacing: 1px;
+    }
+
+    /* Battery bank */
+    .battery-bank {
+      right: 8%;
+      bottom: 34%;
+      width: 24%;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .battery {
+      height: 76px;
+      background: linear-gradient(135deg, #1c1300, #2a1d00);
+      border: 2px solid #f59e0b;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-end;
+      padding-bottom: 8px;
+      position: relative;
+      box-shadow: 0 0 15px rgba(245, 158, 11, 0.2);
+    }
+    .battery::before {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 28px;
+      height: 8px;
+      background: linear-gradient(90deg, #e5e7eb 50%, #1f2937 50%);
+      border-radius: 2px 2px 0 0;
+    }
+    .battery-cap { font-size: 10px; color: var(--gold); font-weight: 700; }
+    .battery-volt { font-size: 8px; color: var(--muted); }
+
+    /* Inverter */
+    .inverter {
+      right: 30%;
+      bottom: 14%;
+      width: 90px;
+      height: 100px;
+      background: linear-gradient(135deg, #1a0a2e, #12062a);
+      border: 2px solid var(--purple);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+      box-shadow: 0 0 18px rgba(168, 85, 247, 0.2);
+    }
+    .inverter-icon { font-size: 24px; color: var(--purple); }
+    .inverter-label { font-size: 8px; color: #c084fc; text-align: center; margin-top: 4px; }
+
+    /* Distribution board */
+    .db {
+      left: 14%;
+      bottom: 14%;
+      width: 90px;
+      height: 76px;
+      background: linear-gradient(135deg, #1a1a1a, #0f0f0f);
+      border: 2px solid #e5e7eb;
+      border-radius: 5px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 6px;
+    }
+    .db-label { font-size: 9px; color: #e5e7eb; text-align: center; font-weight: 700; }
+
+    /* Loads */
+    .loads {
+      left: 5%;
+      bottom: 5%;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      max-width: 42%;
+    }
+    .load {
+      width: 46px;
+      height: 40px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      background: rgba(250, 204, 21, 0.08);
+      border: 1px solid rgba(250, 204, 21, 0.3);
+    }
+    .load:nth-child(2) { background: rgba(59, 130, 246, 0.08); border-color: rgba(59, 130, 246, 0.3); }
+    .load:nth-child(3) { background: rgba(34, 197, 94, 0.08); border-color: rgba(34, 197, 94, 0.3); }
+    .load:nth-child(4) { background: rgba(168, 85, 247, 0.08); border-color: rgba(168, 85, 247, 0.3); }
+
+    /* SVG wires + particles */
+    .wires {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .particle {
+      offset-path: path('M0 0');
+      offset-rotate: 0deg;
+      animation: move 2.5s linear infinite;
+    }
+    @keyframes move {
+      0% { offset-distance: 0%; opacity: 0; }
+      10% { opacity: 1; }
+      90% { opacity: 1; }
+      100% { offset-distance: 100%; opacity: 0; }
+    }
+
+    /* Labels */
+    .comp-label {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(245, 200, 66, 0.4);
+      border-radius: 4px;
+      padding: 4px 8px;
+      font-size: 10px;
+      color: var(--gold);
+      font-weight: 700;
+      pointer-events: none;
+      white-space: nowrap;
+      z-index: 3;
+    }
+
+    /* Info panel */
+    .info-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 16px;
+      min-height: 110px;
+    }
+    .info-panel h2 {
+      font-size: 1.1rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .info-panel p { font-size: 0.95rem; line-height: 1.6; color: var(--text); }
+    .info-panel .hint { color: var(--muted); font-size: 0.9rem; }
+    .stats {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .stat {
+      background: rgba(245, 200, 66, 0.08);
+      border: 1px solid rgba(245, 200, 66, 0.25);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    .stat strong { color: var(--gold); }
+
+    /* Controls */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--gold); }
+    .btn.active { background: rgba(245, 200, 66, 0.15); border-color: var(--gold); color: var(--gold); }
+
+    @media (max-width: 720px) {
+      .stage { min-height: 380px; }
+      .array-wrap { width: 44%; left: 4%; }
+      .battery-bank { width: 30%; right: 4%; }
+      .controller { width: 90px; height: 120px; }
+      .inverter, .db { width: 72px; }
+      .loads { max-width: 50%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Interactive Solar PV System</h1>
+      <div class="subtitle">Click each component to learn its role. Toggle day / night to see energy flow change.</div>
+    </header>
+
+    <div class="stage" id="stage">
+      <svg class="sky" width="100%" height="100%" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="skyGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stop-color="#0a1628"/>
+            <stop offset="100%" stop-color="#1e3a60"/>
+          </linearGradient>
+        </defs>
+        <rect width="100%" height="100%" fill="url(#skyGrad)" opacity="0.4"/>
+        <g class="stars">
+          <circle cx="10%" cy="12%" r="1.2" fill="#fff" opacity="0.8"/>
+          <circle cx="25%" cy="8%" r="1" fill="#fff" opacity="0.6"/>
+          <circle cx="40%" cy="15%" r="1.4" fill="#fff" opacity="0.9"/>
+          <circle cx="60%" cy="10%" r="1" fill="#fff" opacity="0.7"/>
+          <circle cx="75%" cy="6%" r="1.5" fill="#fff"/>
+          <circle cx="88%" cy="14%" r="1" fill="#fff" opacity="0.6"/>
+        </g>
+      </svg>
+      <div class="sun"></div>
+      <div class="moon"></div>
+
+      <div class="roof"></div>
+      <svg class="roof-grid" width="100%" height="100%" preserveAspectRatio="none">
+        <line x1="0" y1="33%" x2="100%" y2="33%" stroke="#1a1008" stroke-width="1.5"/>
+        <line x1="0" y1="66%" x2="100%" y2="66%" stroke="#1a1008" stroke-width="1.5"/>
+        <line x1="10%" y1="0" x2="10%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="20%" y1="0" x2="20%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="30%" y1="0" x2="30%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="40%" y1="0" x2="40%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="50%" y1="0" x2="50%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="60%" y1="0" x2="60%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="70%" y1="0" x2="70%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="80%" y1="0" x2="80%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+        <line x1="90%" y1="0" x2="90%" y2="100%" stroke="#1a1008" stroke-width="1"/>
+      </svg>
+
+      <!-- SVG wires overlay -->
+      <svg class="wires" id="wires" width="100%" height="100%">
+        <defs>
+          <marker id="arrowGold" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill="#f5c842"/>
+          </marker>
+          <marker id="arrowGreen" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill="#22c55e"/>
+          </marker>
+          <marker id="arrowOrange" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill="#f97316"/>
+          </marker>
+          <marker id="arrowRed" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 L1.5,3 Z" fill="#ef4444"/>
+          </marker>
+        </defs>
+      </svg>
+
+      <div class="component array-wrap" data-id="array" role="button" tabindex="0" aria-label="Solar array">
+        <div class="array">
+          <div class="panel"></div><div class="panel"></div><div class="panel"></div><div class="panel"></div>
+          <div class="panel"></div><div class="panel"></div><div class="panel"></div><div class="panel"></div>
+        </div>
+      </div>
+      <div class="comp-label" style="left: 12%; bottom: 62%;">SOLAR ARRAY</div>
+
+      <div class="component controller" data-id="controller" role="button" tabindex="0" aria-label="Charge controller">
+        <div class="led-row">
+          <div class="led green"></div>
+          <div class="led amber"></div>
+          <div class="led green"></div>
+        </div>
+        <div class="lcd">
+          <div>PV: <span style="color:#f5c842">36.2V</span></div>
+          <div>BATT: <span style="color:#22c55e">12.4V</span></div>
+          <div>MODE: MPPT</div>
+        </div>
+        <div class="controller-label">MPPT 40A</div>
+      </div>
+      <div class="comp-label" style="left: 50%; transform: translateX(-50%); bottom: 58%;">CHARGE CONTROLLER</div>
+
+      <div class="component battery-bank" data-id="battery" role="button" tabindex="0" aria-label="Battery bank">
+        <div class="battery"><div class="battery-cap">100Ah</div><div class="battery-volt">12V</div></div>
+        <div class="battery"><div class="battery-cap">100Ah</div><div class="battery-volt">12V</div></div>
+        <div class="battery"><div class="battery-cap">100Ah</div><div class="battery-volt">12V</div></div>
+        <div class="battery"><div class="battery-cap">100Ah</div><div class="battery-volt">12V</div></div>
+      </div>
+      <div class="comp-label" style="right: 12%; bottom: 62%;">BATTERY BANK</div>
+
+      <div class="component inverter" data-id="inverter" role="button" tabindex="0" aria-label="Inverter">
+        <div class="inverter-icon">⟲</div>
+        <div class="inverter-label">INVERTER<br>DC → AC</div>
+      </div>
+
+      <div class="component db" data-id="db" role="button" tabindex="0" aria-label="Distribution board">
+        <div class="db-label">DISTRIBUTION<br>BOARD</div>
+      </div>
+
+      <div class="loads">
+        <div class="load">💡</div>
+        <div class="load">🌀</div>
+        <div class="load">📱</div>
+        <div class="load">📺</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn active" id="dayBtn" aria-pressed="true">☀ Day mode</button>
+      <button class="btn" id="nightBtn" aria-pressed="false">🌙 Night mode</button>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <h2>🖱 Tap a component</h2>
+      <p class="hint">Click the solar array, charge controller, battery bank, inverter, or distribution board to see what it does.</p>
+    </div>
+  </div>
+
+  <script>
+    const components = {
+      array: {
+        title: '☀ Solar Array',
+        body: 'Eight 400 Wp monocrystalline panels wired in series-parallel. During the day they convert sunlight into DC electricity at roughly 30–40 V per string.',
+        stats: ['Total: 3.2 kWp', 'Voltage: 36–48 V DC', 'Tech: Mono PERC']
+      },
+      controller: {
+        title: '🧠 MPPT Charge Controller',
+        body: 'The “brain” of the system. It tracks the maximum power point of the array, converts the panel voltage to match the battery, and protects the battery from overcharge and deep discharge.',
+        stats: ['Type: MPPT 40 A', 'Efficiency: ~97.5%', 'Protections: OVP / UVP / SC']
+      },
+      battery: {
+        title: '🔋 Battery Bank',
+        body: 'Four 12 V / 100 Ah batteries store surplus solar energy. With 80% depth-of-discharge, the bank provides about 15 kWh of usable backup power.',
+        stats: ['Capacity: 400 Ah @ 48 V', 'Usable: ~15 kWh', 'Autonomy: ~3 days']
+      },
+      inverter: {
+        title: '⚡ Inverter',
+        body: 'Converts the battery’s 48 V DC into 230 V AC so standard household appliances can run. It also synchronises with the grid in hybrid systems.',
+        stats: ['Input: 48 V DC', 'Output: 230 V AC', 'Wave: Pure sine']
+      },
+      db: {
+        title: '🏠 Distribution Board',
+        body: 'Routes AC power to lights, fans, sockets, and appliances. It includes MCBs and surge protection to keep the home circuits safe.',
+        stats: ['Voltage: 230 V AC', 'Protection: MCB + SPD', 'Loads: 4 circuits']
+      }
+    };
+
+    const stage = document.getElementById('stage');
+    const infoPanel = document.getElementById('infoPanel');
+    const wiresSvg = document.getElementById('wires');
+    const dayBtn = document.getElementById('dayBtn');
+    const nightBtn = document.getElementById('nightBtn');
+    let isNight = false;
+
+    function renderInfo(id) {
+      const c = components[id];
+      document.querySelectorAll('.component').forEach(el => el.classList.remove('active'));
+      document.querySelector(`.component[data-id="${id}"]`).classList.add('active');
+      infoPanel.innerHTML = `
+        <h2>${c.title}</h2>
+        <p>${c.body}</p>
+        <div class="stats">${c.stats.map(s => `<div class="stat"><strong>${s.split(':')[0]}:</strong> ${s.split(':')[1]}</div>`).join('')}</div>
+      `;
+    }
+
+    document.querySelectorAll('.component').forEach(el => {
+      el.addEventListener('click', () => renderInfo(el.dataset.id));
+      el.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') renderInfo(el.dataset.id); });
+    });
+
+    function drawWires() {
+      wiresSvg.innerHTML = wiresSvg.querySelector('defs').outerHTML;
+      const s = stage.getBoundingClientRect();
+      const pts = {};
+      document.querySelectorAll('.component').forEach(el => {
+        const r = el.getBoundingClientRect();
+        pts[el.dataset.id] = {
+          x: r.left + r.width / 2 - s.left,
+          y: r.top + r.height / 2 - s.top,
+          top: r.top - s.top,
+          right: r.right - s.left,
+          bottom: r.bottom - s.top,
+          left: r.left - s.left
+        };
+      });
+
+      function path(d, color, marker, id) {
+        const p = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        p.setAttribute('d', d);
+        p.setAttribute('stroke', color);
+        p.setAttribute('stroke-width', '3');
+        p.setAttribute('fill', 'none');
+        p.setAttribute('stroke-linecap', 'round');
+        p.setAttribute('marker-end', `url(#${marker})`);
+        p.setAttribute('opacity', '0.75');
+        wiresSvg.appendChild(p);
+
+        // animated dashes
+        const dash = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        dash.setAttribute('d', d);
+        dash.setAttribute('stroke', color);
+        dash.setAttribute('stroke-width', '6');
+        dash.setAttribute('fill', 'none');
+        dash.setAttribute('stroke-linecap', 'round');
+        dash.setAttribute('stroke-dasharray', '8 18');
+        dash.setAttribute('opacity', '0.5');
+        dash.style.animation = isNight && id === 'inv-batt'
+          ? 'dashReverse 2s linear infinite'
+          : 'dashMove 2s linear infinite';
+        wiresSvg.appendChild(dash);
+      }
+
+      // Array -> Controller (gold)
+      path(`M${pts.array.right} ${pts.array.y} L${pts.controller.left} ${pts.controller.y}`, '#f5c842', 'arrowGold', 'arr-ctrl');
+      // Controller -> Battery (green)
+      path(`M${pts.controller.right} ${pts.controller.y} L${pts.battery.left} ${pts.battery.y}`, '#22c55e', 'arrowGreen', 'ctrl-batt');
+      // Battery -> Inverter (orange)
+      path(`M${pts.battery.x} ${pts.battery.bottom} L${pts.inverter.x} ${pts.inverter.top}`, '#f97316', 'arrowOrange', 'batt-inv');
+      // Inverter -> DB (red)
+      path(`M${pts.inverter.left} ${pts.inverter.y} L${pts.db.right} ${pts.db.y}`, '#ef4444', 'arrowRed', 'inv-db');
+      // DB -> Loads (white)
+      path(`M${pts.db.left} ${pts.db.y} L${pts.db.left - 30} ${pts.db.y}`, '#e2e8f0', 'arrowRed', 'db-loads');
+    }
+
+    const styleSheet = document.createElement('style');
+    styleSheet.textContent = `
+      @keyframes dashMove { to { stroke-dashoffset: -52; } }
+      @keyframes dashReverse { to { stroke-dashoffset: 52; } }
+    `;
+    document.head.appendChild(styleSheet);
+
+    function setMode(night) {
+      isNight = night;
+      stage.classList.toggle('night', night);
+      dayBtn.classList.toggle('active', !night);
+      nightBtn.classList.toggle('active', night);
+      dayBtn.setAttribute('aria-pressed', !night);
+      nightBtn.setAttribute('aria-pressed', night);
+      drawWires();
+    }
+
+    dayBtn.addEventListener('click', () => setMode(false));
+    nightBtn.addEventListener('click', () => setMode(true));
+
+    window.addEventListener('load', () => {
+      drawWires();
+      renderInfo('array');
+    });
+    window.addEventListener('resize', drawWires);
+  </script>
+</body>
+</html>
