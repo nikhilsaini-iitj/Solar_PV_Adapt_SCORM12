@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <linearGradient id="sky" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#0b1622"/>
+      <stop offset="60%" stop-color="#162b42"/>
+      <stop offset="100%" stop-color="#2a3f54"/>
+    </linearGradient>
+    <linearGradient id="sun" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F2CB73"/>
+      <stop offset="100%" stop-color="#E7B24C"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0A5CD6"/>
+      <stop offset="100%" stop-color="#0742a0"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Sky background -->
+  <rect width="800" height="450" fill="url(#sky)"/>
+
+  <!-- Abstract sun rays -->
+  <g opacity="0.25">
+    <polygon points="400,80 200,450 600,450" fill="#F2CB73"/>
+    <polygon points="400,80 120,450 300,450" fill="#E7B24C"/>
+    <polygon points="400,80 500,450 680,450" fill="#E7B24C"/>
+  </g>
+
+  <!-- Sun -->
+  <circle cx="400" cy="110" r="55" fill="url(#sun)" filter="url(#glow)"/>
+
+  <!-- Rooftop silhouette -->
+  <path d="M0,380 L220,260 L580,260 L800,380 L800,450 L0,450 Z" fill="#09131f"/>
+
+  <!-- Solar panel frame -->
+  <g transform="translate(260, 270) rotate(-8 140 70)">
+    <rect x="0" y="0" width="280" height="160" rx="8" fill="#1a2332" stroke="#F4EFE6" stroke-width="4"/>
+    <!-- Cells grid -->
+    <rect x="12" y="10" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="78" y="10" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="144" y="10" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="210" y="10" width="58" height="42" rx="2" fill="url(#panel)"/>
+
+    <rect x="12" y="56" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="78" y="56" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="144" y="56" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="210" y="56" width="58" height="42" rx="2" fill="url(#panel)"/>
+
+    <rect x="12" y="102" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="78" y="102" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="144" y="102" width="62" height="42" rx="2" fill="url(#panel)"/>
+    <rect x="210" y="102" width="58" height="42" rx="2" fill="url(#panel)"/>
+
+    <!-- Busbars -->
+    <line x1="12" y1="31" x2="268" y2="31" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+    <line x1="12" y1="77" x2="268" y2="77" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+    <line x1="12" y1="123" x2="268" y2="123" stroke="rgba(255,255,255,0.35)" stroke-width="1.5"/>
+  </g>
+
+  <!-- Title text -->
+  <text x="400" y="410" text-anchor="middle" font-family="Arial, sans-serif" font-size="26" font-weight="800" fill="#F4EFE6">Choosing the Right Solar Panel</text>
+  <text x="400" y="436" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="600" fill="#F2CB73" letter-spacing="1">UNIT 2 — MAJOR COMPONENTS</text>
+</svg>
