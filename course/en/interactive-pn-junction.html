@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Micro Zoom — Solar Cell & P-N Junction Simulation</title>
+  <style>
+    :root {
+      --bg: #050814;
+      --card: #0b1326;
+      --border: #1e2e4f;
+      --gold: #f5c842;
+      --blue: #60a5fa;
+      --p-color: #4f46e5;
+      --p-light: #818cf8;
+      --n-color: #0f766e;
+      --n-light: #2dd4bf;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    header { text-align: center; margin-bottom: 16px; }
+    .scene-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, #16a34a, #15803d);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: clamp(1.2rem, 3vw, 1.9rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--p-light) 50%, var(--n-light) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 0.9rem; color: var(--muted); margin-top: 6px; }
+
+    .stage {
+      position: relative;
+      background: linear-gradient(180deg, #080c18 0%, #0d1426 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      min-height: 420px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .sim {
+      position: relative;
+      width: min(860px, 96vw);
+      height: min(420px, 58vw);
+    }
+
+    /* Grid background */
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
+    /* Silicon layers */
+    .layer {
+      position: absolute;
+      left: 10%;
+      right: 14%;
+      height: 34%;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 24px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      overflow: hidden;
+    }
+    .layer .doping {
+      font-size: 0.75rem;
+      font-weight: 500;
+      text-transform: none;
+      letter-spacing: 0;
+      opacity: 0.9;
+    }
+    .p-layer {
+      top: 18%;
+      background: linear-gradient(180deg, var(--p-color), #3730a3);
+      border: 2px solid var(--p-light);
+      box-shadow: 0 0 30px rgba(79,70,229,0.25);
+      color: var(--p-light);
+    }
+    .n-layer {
+      bottom: 18%;
+      background: linear-gradient(180deg, #115e59, var(--n-color));
+      border: 2px solid var(--n-light);
+      box-shadow: 0 0 30px rgba(15,118,110,0.25);
+      color: var(--n-light);
+    }
+
+    /* Busbars */
+    .busbars {
+      position: absolute;
+      top: 14%;
+      left: 12%;
+      right: 16%;
+      height: 8%;
+      display: flex;
+      justify-content: space-evenly;
+      pointer-events: none;
+    }
+    .busbar {
+      width: 4%;
+      height: 100%;
+      background: linear-gradient(180deg, #c0c0c0, #e5e7eb);
+      border-radius: 1px;
+      opacity: 0.85;
+    }
+
+    /* Depletion zone */
+    .depletion {
+      position: absolute;
+      left: 10%;
+      right: 14%;
+      top: 50%;
+      height: 10%;
+      transform: translateY(-50%);
+      background: repeating-linear-gradient(90deg, rgba(255,255,255,0.08) 0 6px, transparent 6px 12px);
+      border-top: 2px dashed var(--p-light);
+      border-bottom: 2px dashed var(--n-light);
+      pointer-events: none;
+    }
+    .depletion-label {
+      position: absolute;
+      right: 3%;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--muted);
+      font-size: 0.7rem;
+      letter-spacing: 1px;
+      writing-mode: vertical-rl;
+      text-orientation: mixed;
+    }
+
+    /* Charges */
+    .charges {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+    .charge {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 800;
+      box-shadow: 0 0 10px currentColor;
+    }
+    .hole {
+      background: rgba(245,200,66,0.15);
+      border: 2px solid var(--gold);
+      color: var(--gold);
+    }
+    .electron {
+      background: rgba(45,212,191,0.15);
+      border: 2px solid var(--n-light);
+      color: var(--n-light);
+    }
+
+    /* Photon ray */
+    .photon {
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 3px;
+      height: 18%;
+      background: linear-gradient(180deg, var(--gold), transparent);
+      transform: translateX(-50%);
+      border-radius: 2px;
+      opacity: 0;
+    }
+    .photon::before {
+      content: '☀';
+      position: absolute;
+      top: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      color: var(--gold);
+      text-shadow: 0 0 12px var(--gold);
+    }
+    .photon-label {
+      position: absolute;
+      top: 2%;
+      left: 52%;
+      color: var(--gold);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* DC out arrow */
+    .dc-out {
+      position: absolute;
+      right: 2%;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      color: var(--n-light);
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .dc-out .arrow {
+      width: 3px;
+      height: 60px;
+      background: linear-gradient(180deg, var(--n-light), var(--n-color));
+      position: relative;
+    }
+    .dc-out .arrow::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 8px solid var(--n-light);
+    }
+
+    /* External circuit */
+    .circuit {
+      position: absolute;
+      bottom: 3%;
+      left: 10%;
+      right: 14%;
+      height: 12%;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 10px;
+    }
+    .circuit-line {
+      flex: 1;
+      height: 3px;
+      background: linear-gradient(90deg, var(--gold), var(--n-light));
+      border-radius: 2px;
+      position: relative;
+      overflow: hidden;
+    }
+    .circuit-line::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.6), transparent);
+      animation: flow 1.4s linear infinite;
+    }
+    @keyframes flow {
+      from { transform: translateX(-100%); }
+      to { transform: translateX(100%); }
+    }
+    .load-icon {
+      width: 34px;
+      height: 34px;
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    .circuit-label {
+      position: absolute;
+      bottom: 1%;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--gold);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    /* Action button */
+    .controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-top: 14px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 8px 16px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn:hover { border-color: var(--gold); color: var(--gold); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Pair text */
+    .pair-text {
+      position: absolute;
+      top: 46%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: var(--gold);
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-shadow: 0 0 10px rgba(245,200,66,0.5);
+      opacity: 0;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Info panel */
+    .info-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 16px;
+      min-height: 110px;
+    }
+    .info-panel h2 {
+      font-size: 1.05rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+    }
+    .info-panel p { font-size: 0.95rem; line-height: 1.6; }
+    .info-panel .hint { color: var(--muted); }
+
+    @keyframes photonDrop {
+      0% { top: 0; opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { top: 48%; opacity: 0; }
+    }
+    @keyframes electronMove {
+      0% { transform: translate(0, 0); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translate(120px, 55px); opacity: 1; }
+    }
+    @keyframes holeMove {
+      0% { transform: translate(0, 0); opacity: 0; }
+      20% { opacity: 1; }
+      100% { transform: translate(-80px, -45px); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; }
+    }
+
+    @media (max-width: 720px) {
+      .sim { height: 340px; }
+      .layer { padding: 0 12px; font-size: 0.75rem; }
+      .layer .doping { font-size: 0.6rem; }
+      .charge { width: 18px; height: 18px; font-size: 11px; }
+      .photon-label { font-size: 0.7rem; }
+      .dc-out { font-size: 0.6rem; }
+      .dc-out .arrow { height: 40px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="scene-tag">Scene 4</div>
+      <h1>Micro Zoom — Solar Cell & P-N Junction Simulation</h1>
+      <div class="subtitle">Fire a photon and watch an electron-hole pair split at the junction to create DC current.</div>
+    </header>
+
+    <div class="stage">
+      <div class="sim" id="sim">
+        <div class="grid"></div>
+
+        <div class="busbars">
+          <div class="busbar"></div><div class="busbar"></div><div class="busbar"></div>
+          <div class="busbar"></div><div class="busbar"></div><div class="busbar"></div>
+        </div>
+
+        <div class="photon" id="photon"></div>
+        <div class="photon-label">PHOTON</div>
+
+        <div class="layer p-layer">
+          <span>P-TYPE SILICON</span>
+          <span class="doping">Boron-doped | ⊕ holes</span>
+        </div>
+
+        <div class="depletion"></div>
+        <div class="depletion-label">DEPLETION ZONE</div>
+
+        <div class="layer n-layer">
+          <span>N-TYPE SILICON</span>
+          <span class="doping">Phosphorus-doped | ⊖ electrons</span>
+        </div>
+
+        <div class="charges" id="charges"></div>
+        <div class="pair-text" id="pairText">Electron-Hole Pair Created</div>
+
+        <div class="dc-out">
+          <div>DC</div>
+          <div class="arrow"></div>
+          <div>OUT</div>
+        </div>
+
+        <div class="circuit">
+          <div class="circuit-line" style="flex:0.4"></div>
+          <div class="load-icon">💡</div>
+          <div class="circuit-line" style="flex:0.6"></div>
+        </div>
+        <div class="circuit-label">EXTERNAL CIRCUIT (LOAD)</div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="btn" id="fireBtn">☀ Fire photon</button>
+      <button class="btn" id="autoBtn">▶ Auto-play</button>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <h2>⚡ How a solar cell generates electricity</h2>
+      <p class="hint">Click “Fire photon” to see a photon strike the p-n junction, create an electron-hole pair, and get separated by the built-in electric field. Reconnected through an external circuit, this movement is DC current.</p>
+    </div>
+  </div>
+
+  <script>
+    const photon = document.getElementById('photon');
+    const charges = document.getElementById('charges');
+    const pairText = document.getElementById('pairText');
+    const fireBtn = document.getElementById('fireBtn');
+    const autoBtn = document.getElementById('autoBtn');
+    const infoPanel = document.getElementById('infoPanel');
+    let autoInterval = null;
+
+    function firePhoton() {
+      fireBtn.disabled = true;
+
+      // reset
+      photon.style.animation = 'none';
+      charges.innerHTML = '';
+      pairText.style.opacity = '0';
+      void photon.offsetWidth;
+
+      photon.style.animation = 'photonDrop 0.9s ease-in forwards';
+
+      setTimeout(() => {
+        pairText.style.opacity = '1';
+      }, 650);
+
+      setTimeout(() => {
+        const electron = document.createElement('div');
+        electron.className = 'charge electron';
+        electron.textContent = '⊖';
+        electron.style.left = '48%';
+        electron.style.top = '48%';
+        electron.style.animation = 'electronMove 1.2s ease-out forwards';
+        charges.appendChild(electron);
+
+        const hole = document.createElement('div');
+        hole.className = 'charge hole';
+        hole.textContent = '⊕';
+        hole.style.left = '48%';
+        hole.style.top = '48%';
+        hole.style.animation = 'holeMove 1.2s ease-out forwards';
+        charges.appendChild(hole);
+      }, 850);
+
+      setTimeout(() => {
+        pairText.style.animation = 'fadeOut 0.5s ease forwards';
+      }, 1700);
+
+      setTimeout(() => {
+        infoPanel.innerHTML = `
+          <h2>⚡ Electron-hole pair separated</h2>
+          <p>The photon knocked an electron loose from the silicon lattice, leaving a hole. The electric field in the depletion zone pushes the negative electron into the n-type layer and the positive hole into the p-type layer. Connecting the cell to a load lets them recombine externally, producing DC current.</p>
+        `;
+        fireBtn.disabled = false;
+      }, 2200);
+    }
+
+    fireBtn.addEventListener('click', firePhoton);
+
+    autoBtn.addEventListener('click', () => {
+      if (autoInterval) {
+        clearInterval(autoInterval);
+        autoInterval = null;
+        autoBtn.textContent = '▶ Auto-play';
+        fireBtn.disabled = false;
+        return;
+      }
+      firePhoton();
+      autoInterval = setInterval(firePhoton, 2800);
+      autoBtn.textContent = '⏸ Pause';
+    });
+
+    // initial photon after short delay
+    setTimeout(firePhoton, 600);
+  </script>
+</body>
+</html>

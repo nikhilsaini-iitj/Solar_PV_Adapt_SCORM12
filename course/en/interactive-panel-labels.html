@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar Panel — Cinematic Zoom In & Part Labels</title>
+  <style>
+    :root {
+      --bg: #050814;
+      --card: #0b1326;
+      --border: #1e2e4f;
+      --gold: #f5c842;
+      --blue: #60a5fa;
+      --cyan: #22d3ee;
+      --green: #4ade80;
+      --orange: #fb923c;
+      --purple: #c084fc;
+      --red: #f87171;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      width: 100%;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    header { text-align: center; margin-bottom: 16px; }
+    .scene-tag {
+      display: inline-block;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      padding: 4px 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
+    }
+    h1 {
+      font-size: clamp(1.2rem, 3vw, 1.9rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 0%, var(--blue) 60%, var(--gold) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle { font-size: 0.9rem; color: var(--muted); margin-top: 6px; }
+
+    .stage {
+      position: relative;
+      background: linear-gradient(180deg, #0a1428 0%, #0f1d38 50%, #121c30 100%);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      min-height: 420px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .panel-scene {
+      position: relative;
+      width: min(680px, 92vw);
+      aspect-ratio: 2 / 1;
+      animation: zoomIn 1.2s cubic-bezier(0.22, 1, 0.36, 1) both;
+    }
+    @keyframes zoomIn {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .panel-frame {
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      border: 8px solid #5c7ea8;
+      background: linear-gradient(135deg, #0f1d40, #13254a);
+      box-shadow:
+        0 0 0 2px #8ba9d1,
+        0 20px 60px rgba(0,0,0,0.5),
+        inset 0 0 40px rgba(0,0,0,0.35);
+    }
+    .panel-frame::after {
+      content: '';
+      position: absolute;
+      inset: 6px;
+      border: 1px solid rgba(139,169,209,0.25);
+      border-radius: 4px;
+      pointer-events: none;
+    }
+    .cells {
+      position: absolute;
+      inset: 14px;
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 2px;
+    }
+    .cell {
+      background: linear-gradient(135deg, #162b5c, #1b326d);
+      border: 1px solid rgba(96,165,250,0.15);
+      border-radius: 1px;
+      position: relative;
+    }
+    .cell::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+                  linear-gradient(0deg, rgba(255,255,255,0.05) 1px, transparent 1px);
+      background-size: 20% 25%;
+      opacity: 0.6;
+    }
+
+    .corner-bracket {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-color: var(--gold);
+      border-style: solid;
+      border-width: 0;
+      opacity: 0.7;
+    }
+    .corner-bracket.tl { top: -14px; left: -14px; border-top-width: 3px; border-left-width: 3px; }
+    .corner-bracket.tr { top: -14px; right: -14px; border-top-width: 3px; border-right-width: 3px; }
+    .corner-bracket.bl { bottom: -14px; left: -14px; border-bottom-width: 3px; border-left-width: 3px; }
+    .corner-bracket.br { bottom: -14px; right: -14px; border-bottom-width: 3px; border-right-width: 3px; }
+
+    .hotspot {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      cursor: pointer;
+      z-index: 10;
+      transition: transform 0.2s ease;
+    }
+    .hotspot:hover { transform: scale(1.25); }
+    .hotspot::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 50%;
+      background: currentColor;
+      opacity: 0.85;
+      box-shadow: 0 0 12px currentColor;
+    }
+    .hotspot::after {
+      content: '';
+      position: absolute;
+      inset: -8px;
+      border-radius: 50%;
+      border: 2px solid currentColor;
+      opacity: 0.35;
+      animation: pulse 2s ease-out infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(0.6); opacity: 0.5; }
+      100% { transform: scale(1.8); opacity: 0; }
+    }
+    .hotspot.active::after { animation: pulse 1s ease-out infinite; border-color: #fff; }
+    .hotspot.active::before { background: #fff; }
+
+    .label {
+      position: absolute;
+      background: rgba(0,0,0,0.78);
+      border: 1px solid currentColor;
+      border-radius: 6px;
+      padding: 6px 10px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: currentColor;
+      white-space: nowrap;
+      pointer-events: none;
+      z-index: 8;
+      opacity: 0.9;
+    }
+    .label small {
+      display: block;
+      font-size: 0.65rem;
+      font-weight: 400;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    .connector {
+      position: absolute;
+      height: 1px;
+      background: currentColor;
+      opacity: 0.5;
+      transform-origin: left center;
+      pointer-events: none;
+      z-index: 7;
+    }
+
+    /* hotspot positions */
+    .hs-glass { top: 18%; left: 18%; color: var(--blue); }
+    .hs-glass ~ .connector { top: 21%; left: 21%; width: 14%; transform: rotate(8deg); }
+    .hs-glass ~ .label { top: 8%; left: 6%; border-color: var(--blue); color: var(--blue); }
+
+    .hs-frame { top: 16%; right: 14%; color: var(--cyan); }
+    .hs-frame ~ .connector { top: 19%; right: 16%; width: 16%; transform: rotate(-6deg); transform-origin: right center; }
+    .hs-frame ~ .label { top: 6%; right: 6%; border-color: var(--cyan); color: var(--cyan); }
+
+    .hs-cells { top: 52%; left: 20%; color: var(--gold); }
+    .hs-cells ~ .connector { top: 54%; left: 24%; width: 12%; transform: rotate(2deg); }
+    .hs-cells ~ .label { top: 46%; left: 4%; border-color: var(--gold); color: var(--gold); }
+
+    .hs-jbox { top: 62%; right: 26%; color: var(--orange); }
+    .hs-jbox ~ .connector { top: 64%; right: 28%; width: 10%; transform: rotate(-3deg); transform-origin: right center; }
+    .hs-jbox ~ .label { top: 60%; right: 8%; border-color: var(--orange); color: var(--orange); }
+
+    .hs-backsheet { bottom: 18%; left: 50%; transform: translateX(-50%); color: var(--purple); }
+    .hs-backsheet ~ .connector { bottom: 22%; left: 50%; width: 16%; transform: translateX(-50%) rotate(90deg); transform-origin: center; }
+    .hs-backsheet ~ .label { bottom: 4%; left: 50%; transform: translateX(-50%); border-color: var(--purple); color: var(--purple); }
+
+    .spec-card {
+      position: absolute;
+      top: 5%;
+      right: 5%;
+      background: rgba(0,0,0,0.72);
+      border: 1px solid var(--gold);
+      border-radius: 8px;
+      padding: 12px 14px;
+      min-width: 170px;
+      z-index: 12;
+      backdrop-filter: blur(4px);
+    }
+    .spec-card h3 {
+      font-size: 0.8rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+      font-family: monospace;
+    }
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      padding: 3px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .spec-row:last-child { border: none; }
+    .spec-row span:first-child { color: var(--muted); }
+    .spec-row span:last-child { color: var(--green); font-weight: 700; font-family: monospace; }
+
+    .info-panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 18px;
+      margin-top: 16px;
+      min-height: 110px;
+    }
+    .info-panel h2 {
+      font-size: 1.1rem;
+      color: var(--gold);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .info-panel p { font-size: 0.95rem; line-height: 1.6; }
+    .info-panel .hint { color: var(--muted); }
+    .stats {
+      display: flex;
+      gap: 14px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+    .stat {
+      background: rgba(245,200,66,0.08);
+      border: 1px solid rgba(245,200,66,0.25);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 0.8rem;
+    }
+    .stat strong { color: var(--gold); }
+
+    @media (max-width: 720px) {
+      .stage { min-height: 360px; padding: 14px; }
+      .spec-card { top: 3%; right: 3%; padding: 8px 10px; min-width: 140px; }
+      .spec-card h3 { font-size: 0.7rem; }
+      .spec-row { font-size: 0.6rem; }
+      .label { font-size: 0.65rem; padding: 4px 6px; }
+      .label small { font-size: 0.55rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="scene-tag">Scene 2</div>
+      <h1>Solar Panel — Cinematic Zoom In & Part Labels</h1>
+      <div class="subtitle">Tap each glowing hotspot to identify the part and its purpose.</div>
+    </header>
+
+    <div class="stage" id="stage">
+      <div class="panel-scene" id="panelScene">
+        <div class="corner-bracket tl"></div>
+        <div class="corner-bracket tr"></div>
+        <div class="corner-bracket bl"></div>
+        <div class="corner-bracket br"></div>
+
+        <div class="panel-frame">
+          <div class="cells">
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+            <div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div><div class="cell"></div>
+          </div>
+        </div>
+
+        <div class="hotspot hs-glass" data-id="glass" role="button" tabindex="0" aria-label="Tempered glass cover"></div>
+        <div class="connector" style="top:21%;left:21%;width:14%;transform:rotate(8deg)"></div>
+        <div class="label" style="top:8%;left:6%">TEMPERED GLASS COVER<small>3.2 mm toughened, low-iron</small></div>
+
+        <div class="hotspot hs-frame" data-id="frame" role="button" tabindex="0" aria-label="Aluminium frame"></div>
+        <div class="connector" style="top:19%;right:16%;width:16%;transform:rotate(-6deg);transform-origin:right center"></div>
+        <div class="label" style="top:6%;right:6%">ALUMINIUM FRAME<small>Anodised 6063-T5 alloy</small></div>
+
+        <div class="hotspot hs-cells" data-id="cells" role="button" tabindex="0" aria-label="Monocrystalline cells"></div>
+        <div class="connector" style="top:54%;left:24%;width:12%;transform:rotate(2deg)"></div>
+        <div class="label" style="top:46%;left:4%">MONOCRYSTALLINE CELLS<small>60 cells × 24 panels</small></div>
+
+        <div class="hotspot hs-jbox" data-id="jbox" role="button" tabindex="0" aria-label="Junction box"></div>
+        <div class="connector" style="top:64%;right:28%;width:10%;transform:rotate(-3deg);transform-origin:right center"></div>
+        <div class="label" style="top:60%;right:8%">JUNCTION BOX (REAR)<small>IP67, bypass diodes</small></div>
+
+        <div class="hotspot hs-backsheet" data-id="backsheet" role="button" tabindex="0" aria-label="Backsheet and EVA"></div>
+        <div class="connector" style="bottom:22%;left:50%;width:16%;transform:translateX(-50%) rotate(90deg);transform-origin:center"></div>
+        <div class="label" style="bottom:4%;left:50%;transform:translateX(-50%)">BACKSHEET + EVA ENCAPSULANT<small>Weather barrier + cell bonding</small></div>
+
+        <div class="spec-card">
+          <h3>SPEC: SolarMax-400W</h3>
+          <div class="spec-row"><span>Power</span><span>400 Wp</span></div>
+          <div class="spec-row"><span>Efficiency</span><span>21.5%</span></div>
+          <div class="spec-row"><span>Dimensions</span><span>2000×1000mm</span></div>
+          <div class="spec-row"><span>Weight</span><span>22 kg</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="info-panel" id="infoPanel">
+      <h2>🖱 Tap a hotspot</h2>
+      <p class="hint">Click any pulsing dot on the panel to reveal what that layer does and why it matters.</p>
+    </div>
+  </div>
+
+  <script>
+    const parts = {
+      glass: {
+        title: '🛡 Tempered Glass Cover',
+        body: 'The front-facing protective sheet is 3.2 mm low-iron toughened glass. It transmits more than 91% of incoming sunlight while shielding the cells from hail, dust, moisture and mechanical loads.',
+        stats: ['Thickness: 3.2 mm', 'Transmission: >91%', 'Type: Low-iron tempered']
+      },
+      frame: {
+        title: '🔲 Aluminium Frame',
+        body: 'An anodised 6063-T5 aluminium frame gives the module its structural rigidity, allows rooftop mounting via clamps, and provides electrical grounding continuity.',
+        stats: ['Alloy: 6063-T5', 'Finish: Anodised', 'Role: Mount + ground']
+      },
+      cells: {
+        title: '☀ Monocrystalline Cells',
+        body: 'The power-generating heart of the module. Each cell is a thin slice of single-crystal silicon doped to form a p-n junction. Wiring 60 cells in series raises the voltage to around 40 V.',
+        stats: ['Count: 60 per panel', 'Tech: Mono PERC', 'Voltage: ~40 V']
+      },
+      jbox: {
+        title: '🔌 Junction Box (Rear)',
+        body: 'Mounted on the back, the junction box houses bypass diodes that protect the cell string from hot-spots when partial shade occurs. It is the point where string cables connect.',
+        stats: ['Rating: IP67', 'Diodes: 3 bypass', 'Cables: MC4 connectors']
+      },
+      backsheet: {
+        title: '🛡 Backsheet + EVA Encapsulant',
+        body: 'The white backsheet reflects light back into cells and insulates electrically. EVA (ethylene-vinyl acetate) films laminated around the cells bond everything together and seal out moisture for 25+ years.',
+        stats: ['Backsheet: PET/TPT', 'EVA: 0.5 mm sheets', 'Warranty: 25 years']
+      }
+    };
+
+    const infoPanel = document.getElementById('infoPanel');
+    const hotspots = document.querySelectorAll('.hotspot');
+
+    function showPart(id) {
+      const p = parts[id];
+      if (!p) return;
+      hotspots.forEach(h => h.classList.remove('active'));
+      document.querySelector(`.hotspot[data-id="${id}"]`).classList.add('active');
+      infoPanel.innerHTML = `
+        <h2>${p.title}</h2>
+        <p>${p.body}</p>
+        <div class="stats">${p.stats.map(s => `<div class="stat"><strong>${s.split(':')[0]}:</strong> ${s.split(':')[1]}</div>`).join('')}</div>
+      `;
+    }
+
+    hotspots.forEach(h => {
+      h.addEventListener('click', e => { e.stopPropagation(); showPart(h.dataset.id); });
+      h.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); showPart(h.dataset.id); } });
+    });
+
+    // default
+    showPart('cells');
+  </script>
+</body>
+</html>
